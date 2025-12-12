@@ -1,0 +1,44 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+    {
+      "label": "rust: fugaso_service",
+      "type": "shell",
+      "command": "cargo",
+      "args": ["run", "--package", "fugaso_service"],
+      "options": {
+        "env": {
+          "CONTAINER_NAME": "fugaso-service"
+        }
+      },
+      "group": "build",
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "rust: test",
+      "type": "shell",
+      "command": "cargo",
+      "args": ["test", "--package", "fugaso_admin", "--test", "thunder_express_test", "--", "test_spin_bonus_win", "--nocapture"],
+      "group": "build",
+      "problemMatcher": ["$rustc"]
+    },
+		{
+			"type": "cargo",
+			"command": "test",
+			"args": [
+				"--package",
+				"fugaso_admin",
+				"--test",
+				"thunder_express_test",
+				"--",
+				"test_spin_bonus_win",
+				"--nocapture"
+			],
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": "build",
+			"label": "rust: test game"
+		}
+	]
+}

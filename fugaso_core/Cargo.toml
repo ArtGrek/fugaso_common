@@ -1,0 +1,26 @@
+[package]
+name = "fugaso_core"
+version = "0.8.8"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+essential_data = { workspace = true }
+essential_async = { workspace = true }
+essential_core = { workspace = true }
+fugaso_data = { path = "../fugaso_data" }
+fugaso_math = { path = "../fugaso_math" }
+sea-orm.workspace = true
+serde.workspace = true
+log.workspace = true
+async-trait.workspace = true
+tokio.workspace = true
+reqwest.workspace = true
+num-traits.workspace = true
+moka = { workspace = true }
+rust_decimal = { version = "1.36.0", features = ["serde-with-float"] }
+
+uuid = { version = "1.3.1", features = ["v4"] }
+chrono = { workspace = true }
+serde_json = "1.0.96"

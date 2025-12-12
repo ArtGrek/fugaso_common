@@ -1,0 +1,18 @@
+[{
+  "clazz": "ThunderExpressMath",
+  "bets": [1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 150],
+  "denomination": [10],
+  "indexDefault": 5,
+  "currencyExclusion": [{
+    "indexDefault": 0,
+    "currency": ["mBTC", "MBC", "mBT", "XB2"],
+    "bets": [1, 2, 3, 4, 5, 8, 10, 20],
+    "denomination": [10]
+  }],
+  "countryExclusion": [{
+    "indexDefault": 0,
+    "country": ["DE"],
+    "bets": [1, 2, 3, 4, 5, 8, 9, 10],
+    "denomination": [10]
+  }]
+}]

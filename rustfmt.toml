@@ -1,0 +1,4 @@
+ # rustfmt.toml
+max_width          = 180         # or whatever limit you prefer
+chain_width        = 180        # let chains use the whole line
+use_small_heuristics = "Off"     # optional: disables the 60 % rule

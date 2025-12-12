@@ -1,0 +1,11 @@
+/target
+/Cargo.lock
+/logs
+/log
+/redis
+/.idea
+/configs
+/config
+/docker
+/requests
+/.vscode

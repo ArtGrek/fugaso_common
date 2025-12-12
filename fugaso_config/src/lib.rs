@@ -1,0 +1,1 @@
+pub const BETS: &str = include_str!("resources/bets.json");

@@ -1,0 +1,16 @@
+[package]
+name = "fugaso_service"
+version = "0.8.9"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+fugaso_admin = { path = "../fugaso_admin" }
+tokio.workspace = true
+
+[features]
+local = ["fugaso_admin/local"]
+server_95_183_54_146 = ["fugaso_admin/server_168_119_37_119"]
+server_116_202_218_41 = ["fugaso_admin/server_116_202_218_41"]
+server_49_12_133_105 = ["fugaso_admin/server_49_12_133_105"]

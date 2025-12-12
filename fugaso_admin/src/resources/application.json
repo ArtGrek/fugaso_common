@@ -1,0 +1,40 @@
+{
+  "serverConfig": {
+    "host": "127.0.0.1",
+    "port": 8081,
+    "path": "simplex",
+    "cache": true
+  },
+  "tourConfig": {
+    "logged": true,
+    "url": "http://localhost:9010",
+    "ip": "0.0.0.0",
+    "name": "user",
+    "password": "7W1laS8D7EpnKGtHazar"
+  },
+  "adminConfig": {
+    "historyLimit": 100
+  },
+  "databaseConnection": "postgres://osm:101918@localhost/lion",
+  "ipServiceConfig": {
+    "url": "https://api.ipstack.com",
+    "key": "60af8ba8863d4ea526953bcc630824bf"
+  },
+  "redisConfig": {
+    "ip": "127.0.0.1",
+    "name": "default",
+    "password": "123456789"
+  },
+  "dispatcherConfig": {
+    "cleanSec": 3600
+  },
+  "proxyConfig": {
+    "startAmount": 3000
+  },
+  "launchConfig": {
+    "serviceLegacy": "fugaso-play/games",
+    "gamesDir": "fugaso-games-v1_0_0",
+    "gamesDirNoJack": "fugaso-games-v1_1_1",
+    "curacaoOn": true
+  }
+}

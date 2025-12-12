@@ -1,0 +1,43 @@
+[workspace]
+resolver = "2"
+members = [
+    "fugaso_service",
+    "fugaso_admin",
+    "fugaso_math",
+    "fugaso_core",
+    "fugaso_data",
+    "fugaso_config",
+    "fugaso_test",
+    "fugaso_math_ed6"
+]
+
+[workspace.dependencies]
+essential_test = { path = "../essential/essential_test" }
+essential_data = { path = "../essential/essential_data" }
+essential_async = { path = "../essential/essential_async"}
+essential_core = { path = "../essential/essential_core" }
+essential_rand = { path = "../essential/essential_rand" }
+lazy_static = "1.4.0"
+async-trait = "0.1.68"
+log = "0.4.17"
+log4rs = "1.2.0"
+serde_json = "1.0.96"
+redis = { version = "0.23.3", features = ["tokio-comp", "json", "connection-manager"] }
+redis-macros = "0.2.1"
+tokio = { version = "1.27.0", features = ["full"] }
+serde = { version = "1.0.163", features = ["derive"] }
+#sea-orm = { version = "0.12.15", features = [ "sqlx-postgres", "runtime-tokio-rustls", "macros" ] }
+sea-orm = { version = "0.12.15", features = ["sqlx-sqlite"] }
+reqwest = { version = "0.12.12", features = ["stream", "rustls-tls", "json"], default-features = false }
+moka = { version = "0.12.1", features = ["future"]}
+mockall = "0.13.1"
+chrono = "0.4.39"
+num-traits = "0.2.15"
+maplit = "1.0.2"
+
+# minimum size release profile
+[profile.release]
+opt-level = "z"
+codegen-units = 1
+lto = "fat"
+strip = "symbols"

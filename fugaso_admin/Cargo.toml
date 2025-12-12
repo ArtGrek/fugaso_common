@@ -1,0 +1,56 @@
+[package]
+name = "fugaso_admin"
+version = "0.8.9"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+essential_test = { workspace = true }
+essential_data = { workspace = true }
+essential_async = { workspace = true }
+essential_core = { workspace = true }
+essential_rand = { workspace = true }
+fugaso_data = { path = "../fugaso_data" }
+fugaso_test = { path = "../fugaso_test" }
+fugaso_core = { path = "../fugaso_core" }
+fugaso_math = { path = "../fugaso_math" }
+fugaso_math_ed6 = { path = "../fugaso_math_ed6" }
+fugaso_config = { path = "../fugaso_config" }
+serde.workspace = true
+sea-orm.workspace = true
+tokio.workspace = true
+log.workspace = true
+log4rs.workspace = true
+serde_json.workspace = true
+async-trait.workspace = true
+reqwest.workspace = true
+lazy_static = { workspace = true }
+maplit = { workspace = true }
+moka = { workspace = true }
+mobc-redis = { version = "0.8.2", optional = true }
+redis = { workspace = true, optional = true}
+chrono = { workspace = true }
+uuid = { version = "1.3.1", features = ["v4"] }
+salvo = { version = "0.76.2", features = ["affix-state", "cors", "cache"] }
+config = { version = "0.13.3", features = ["json"], default-features = false }
+
+[dev-dependencies]
+reqwest.workspace = true
+mockall = { workspace = true }
+
+[features]
+default = []
+redis = ["dep:redis", "fugaso_data/redis", "dep:mobc-redis"]
+local = []
+server_168_119_37_119 = []
+server_168_119_37_119_bonus = []
+server_116_202_218_41 = []
+server_116_202_218_41_playtech = []
+server_116_202_218_41_supply = []
+server_49_12_133_105 = []
+server_49_12_133_105_test = []
+server_168_119_150_102 = ["redis"]
+server_46_28_204_180 = []
+server_92_39_53_49 = []
+server_159_69_70_159_playtech = []
