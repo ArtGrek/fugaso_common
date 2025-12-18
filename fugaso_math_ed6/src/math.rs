@@ -6,10 +6,7 @@ use essential_core::error::ServerError;
 use fugaso_data::fugaso_action;
 use fugaso_data::fugaso_action::ActionKind;
 use fugaso_math::fsm::SlotFSM;
-use fugaso_math::math::{
-    BetCalculator, BetDenomCounterCalculator, GameInitArg, JoinArg, MathSettings, Request,
-    SlotMath, SpinArg, Step,
-};
+use fugaso_math::math::{BetCalculator, BetDenomCounterCalculator, GameInitArg, JoinArg, MathSettings, Request, SlotMath, SpinArg, Step};
 use fugaso_math::protocol::{id, GameData, GameResult, InitialData, StartInfo};
 use fugaso_math::protocol::{Gain, SpinData, Win};
 use fugaso_math::validator::RequestValidator;
@@ -25,20 +22,8 @@ pub struct ThunderExpressMath<R: ThunderExpressRand> {
 
 impl ThunderExpressMath<ThunderExpressRandom> {
     pub fn new(config: Option<String>, reels_cfg: Option<String>) -> Result<Self, ServerError> {
-        let cfg = config
-            .map(|j| {
-                serde_json::from_str(&j)
-                    .map(|v| Arc::new(v))
-                    .map_err(|e| err_on!(e))
-            })
-            .unwrap_or(Ok(Arc::clone(&thunder_express::CFG)))?;
-        let reels_cfg_on = reels_cfg
-            .map(|j| {
-                serde_json::from_str(&j)
-                    .map(|v| Arc::new(v))
-                    .map_err(|e| err_on!(e))
-            })
-            .unwrap_or(Ok(Arc::clone(&thunder_express::REELS_CFG)))?;
+        let cfg = config.map(|j| serde_json::from_str(&j).map(|v| Arc::new(v)).map_err(|e| err_on!(e))).unwrap_or(Ok(Arc::clone(&thunder_express::CFG)))?;
+        let reels_cfg_on = reels_cfg.map(|j| serde_json::from_str(&j).map(|v| Arc::new(v)).map_err(|e| err_on!(e))).unwrap_or(Ok(Arc::clone(&thunder_express::REELS_CFG)))?;
         let rand = ThunderExpressRandom::new(Arc::clone(&cfg), reels_cfg_on);
         Self::custom(rand, cfg)
     }
@@ -79,12 +64,7 @@ impl<R: ThunderExpressRand> ThunderExpressMath<R> {
         Ok(m)
     }
 
-    fn create_collects(
-        &self,
-        grid: &Vec<Vec<char>>,
-        sum: i32,
-        mults: &Vec<Vec<i32>>,
-    ) -> Vec<Vec<i32>> {
+    fn create_collects(&self, grid: &Vec<Vec<char>>, sum: i32, mults: &Vec<Vec<i32>>) -> Vec<Vec<i32>> {
         grid.iter()
             .enumerate()
             .map(|(c, col)| {
@@ -102,13 +82,7 @@ impl<R: ThunderExpressRand> ThunderExpressMath<R> {
             .collect::<Vec<_>>()
     }
 
-    pub fn check_lines(
-        &mut self,
-        req: &Request,
-        counter_idx: usize,
-        round_mul: i32,
-        grid: &Vec<Vec<char>>,
-    ) -> Result<(Vec<Gain>, Vec<i32>, ThunderExpressInfo), ServerError> {
+    pub fn check_lines(&mut self, req: &Request, counter_idx: usize, round_mul: i32, grid: &Vec<Vec<char>>) -> Result<(Vec<Gain>, Vec<i32>, ThunderExpressInfo), ServerError> {
         let lines = &self.config.lines;
         let combs = &self.config.wins;
         let mut gains = lines
@@ -147,14 +121,8 @@ impl<R: ThunderExpressRand> ThunderExpressMath<R> {
             })
             .collect::<Vec<_>>();
 
-        let scatters = grid
-            .iter()
-            .flat_map(|c| c.iter().filter(|v| **v == thunder_express::SYM_COLLECT))
-            .count();
-        let coins = grid
-            .iter()
-            .flat_map(|c| c.iter().filter(|v| thunder_express::is_coin(**v)))
-            .count();
+        let scatters = grid.iter().flat_map(|c| c.iter().filter(|v| **v == thunder_express::SYM_COLLECT)).count();
+        let coins = grid.iter().flat_map(|c| c.iter().filter(|v| thunder_express::is_coin(**v))).count();
         let overlay = if scatters + coins > 0 && scatters + coins < grid.len() {
             self.rand.rand_over(grid)?
         } else {
@@ -162,23 +130,14 @@ impl<R: ThunderExpressRand> ThunderExpressMath<R> {
         };
         debug!("over: {overlay:?}");
         let grid_on = overlay.as_ref().unwrap_or(grid);
-        let scatters = grid_on
-            .iter()
-            .flat_map(|c| c.iter().filter(|v| **v == thunder_express::SYM_COLLECT))
-            .count();
-        let coins = grid_on
-            .iter()
-            .flat_map(|c| c.iter().filter(|v| thunder_express::is_coin(**v)))
-            .count();
+        let scatters = grid_on.iter().flat_map(|c| c.iter().filter(|v| **v == thunder_express::SYM_COLLECT)).count();
+        let coins = grid_on.iter().flat_map(|c| c.iter().filter(|v| thunder_express::is_coin(**v))).count();
         debug!("coins: {coins} scatters: {scatters}");
 
         let mults = self.rand.rand_mults(grid_on, counter_idx)?;
         let (mults1, mut respins) = if scatters > 0 && coins >= grid.len() - 1 {
             let sum = mults.iter().flat_map(|c| c.iter()).sum::<i32>();
-            (
-                self.create_collects(grid_on, sum, &mults),
-                thunder_express::BONUS_COUNT,
-            )
+            (self.create_collects(grid_on, sum, &mults), thunder_express::BONUS_COUNT)
         } else {
             let mults1 = if scatters > 0 && coins > 0 {
                 let sum = mults.iter().flat_map(|c| c.iter()).sum::<i32>();
@@ -230,18 +189,9 @@ impl<R: ThunderExpressRand> ThunderExpressMath<R> {
         prev_info: &ThunderExpressInfo,
         prev_total: i64,
     ) -> Result<(Vec<Gain>, ThunderExpressInfo, Vec<i32>), ServerError> {
-        let prev_scatters = prev_grid
-            .iter()
-            .flat_map(|c| c.iter().filter(|v| **v == thunder_express::SYM_COLLECT))
-            .count();
-        let scatters = grid
-            .iter()
-            .flat_map(|c| c.iter().filter(|v| **v == thunder_express::SYM_COLLECT))
-            .count();
-        let coins = grid
-            .iter()
-            .flat_map(|c| c.iter().filter(|v| thunder_express::is_coin(**v)))
-            .count();
+        let prev_scatters = prev_grid.iter().flat_map(|c| c.iter().filter(|v| **v == thunder_express::SYM_COLLECT)).count();
+        let scatters = grid.iter().flat_map(|c| c.iter().filter(|v| **v == thunder_express::SYM_COLLECT)).count();
+        let coins = grid.iter().flat_map(|c| c.iter().filter(|v| thunder_express::is_coin(**v))).count();
 
         let mut mults = self.rand.rand_mults(&grid, counter_idx)?;
         debug!("mults: {mults:?}");
@@ -289,7 +239,11 @@ impl<R: ThunderExpressRand> ThunderExpressMath<R> {
             None
         };
 
-        let gains = if respins == 0 { gains_end } else { vec![] };
+        let gains = if respins == 0 {
+            gains_end
+        } else {
+            vec![]
+        };
         let sum = gains.iter().map(|g| g.amount).sum::<i64>();
         let total = std::cmp::min(max, prev_total + sum);
         let accum = std::cmp::min(max, prev_info.accum + sum);
@@ -404,18 +358,13 @@ impl<R: ThunderExpressRand> SlotMath for ThunderExpressMath<R> {
         }))
     }
 
-    fn init(
-        &mut self,
-        arg: GameInitArg,
-        actions: &Vec<fugaso_action::Model>,
-    ) -> Result<(), ServerError> {
+    fn init(&mut self, arg: GameInitArg, actions: &Vec<fugaso_action::Model>) -> Result<(), ServerError> {
         if actions.is_empty() {
             return Ok(());
         }
         let action = &actions[actions.len() - 1];
         if let Some(next) = &action.next_act {
-            let result0: GameResult<Self::Special, Self::Restore> =
-                GameResult::from_action(&actions[0])?;
+            let result0: GameResult<Self::Special, Self::Restore> = GameResult::from_action(&actions[0])?;
             let mut result_on = GameResult::from_action(action)?;
 
             let restore = match result0.special.as_ref() {
@@ -428,7 +377,10 @@ impl<R: ThunderExpressRand> SlotMath for ThunderExpressMath<R> {
                     grid: Some(o.clone()),
                     ..Default::default()
                 }),
-                Some(ThunderExpressInfo { mults, .. }) => Some(StartInfo {
+                Some(ThunderExpressInfo {
+                    mults,
+                    ..
+                }) => Some(StartInfo {
                     mults: mults.clone(),
                     grid: Some(result0.grid.clone()),
                     ..Default::default()
@@ -442,11 +394,7 @@ impl<R: ThunderExpressRand> SlotMath for ThunderExpressMath<R> {
                 result_on.holds = result0.holds;
             }
             if action.act_descr == Some(ActionKind::BET) {
-                result_on.total = result_on
-                    .special
-                    .as_ref()
-                    .map(|s| s.total)
-                    .unwrap_or(result_on.total);
+                result_on.total = result_on.special.as_ref().map(|s| s.total).unwrap_or(result_on.total);
             }
             result_on.restore = restore;
             let spin_data = SpinData {
@@ -477,30 +425,21 @@ impl<R: ThunderExpressRand> SlotMath for ThunderExpressMath<R> {
         Ok(())
     }
 
-    fn spin(
-        &mut self,
-        request: &Request,
-        arg: SpinArg,
-        _step: &Step,
-        combo: Option<Vec<usize>>,
-    ) -> Result<GameData<Self::Special, Self::Restore>, ServerError> {
-        let (category, stops, grid) = if request.bet_counter == self.config.bet_counters[0] {
-            let category = thunder_express::BASE_CATEGORY;
+    fn spin(&mut self, request: &Request, arg: SpinArg, _step: &Step, combo: Option<Vec<usize>>) -> Result<GameData<Self::Special, Self::Restore>, ServerError> {
+        let count_idx = self.config.bet_counters.iter().position(|c| *c == request.bet_counter).ok_or_else(|| err_on!("illegal bet counter!"))?;
+        let (category, stops, grid) = if count_idx < self.config.bet_counters.len() - 1 {
+            let category = thunder_express::BASE_CATEGORY + count_idx;
             let (stops, grid) = self.rand.rand_cols_group(category, combo)?;
+            (category, stops, grid)
+        } else if request.bet_counter == self.config.bet_counters[2] {
+            let category = thunder_express::BASE_CATEGORY;
+            let (stops, grid) = self.rand.rand_buy_cols(category)?;
             (category, stops, grid)
         } else {
             return Err(err_on!("illegal bet_counter!"));
         };
 
-        let count_idx = self
-            .config
-            .bet_counters
-            .iter()
-            .position(|c| *c == request.bet_counter)
-            .ok_or_else(|| err_on!("illegal bet counter!"))?;
-
-        let (gains, holds, special) =
-            self.check_lines(request, count_idx, arg.round_multiplier, &grid)?;
+        let (gains, holds, special) = self.check_lines(request, count_idx, arg.round_multiplier, &grid)?;
         let total = gains.iter().map(|g| g.amount).sum();
         let (next_act, restore) = if special.respins > 0 {
             let grid_on = match special.overlay.as_ref() {
@@ -547,21 +486,11 @@ impl<R: ThunderExpressRand> SlotMath for ThunderExpressMath<R> {
         Ok(result)
     }
 
-    fn respin(
-        &mut self,
-        request: &Request,
-        arg: SpinArg,
-        _step: &Step,
-        combo: Option<Vec<usize>>,
-    ) -> Result<GameData<Self::Special, Self::Restore>, ServerError> {
+    fn respin(&mut self, request: &Request, arg: SpinArg, _step: &Step, combo: Option<Vec<usize>>) -> Result<GameData<Self::Special, Self::Restore>, ServerError> {
         let prev = Arc::clone(&self.result);
         let (prev_total, prev_info, prev_grid, prev_restore) = match prev.as_ref() {
             GameData::Spin(v) => {
-                let prev_info = v
-                    .result
-                    .special
-                    .as_ref()
-                    .ok_or_else(|| err_on!("Illegal state!"))?;
+                let prev_info = v.result.special.as_ref().ok_or_else(|| err_on!("Illegal state!"))?;
                 let grid = if let Some(special) = &v.result.special {
                     if let Some(over) = special.overlay.as_ref() {
                         over
@@ -574,35 +503,18 @@ impl<R: ThunderExpressRand> SlotMath for ThunderExpressMath<R> {
                 (v.result.total, prev_info, grid, &v.result.restore)
             }
             GameData::ReSpin(v) => {
-                let prev_info = v
-                    .result
-                    .special
-                    .as_ref()
-                    .ok_or_else(|| err_on!("Illegal state!"))?;
+                let prev_info = v.result.special.as_ref().ok_or_else(|| err_on!("Illegal state!"))?;
                 (v.result.total, prev_info, &v.result.grid, &v.result.restore)
             }
             _ => return Err(err_on!("Illegal state!")),
         };
-        let counter_idx = self
-            .config
-            .bet_counters
-            .iter()
-            .position(|c| *c == request.bet_counter)
-            .ok_or_else(|| err_on!("illegal bet_counter!"))?;
+        let counter_idx = self.config.bet_counters.iter().position(|c| *c == request.bet_counter).ok_or_else(|| err_on!("illegal bet_counter!"))?;
         let category = thunder_express::BONUS_OFFSET + counter_idx;
         let (stops, mut grid) = self.rand.rand_cols(category, combo);
         self.apply_prev(&mut grid, prev_grid);
         debug!("{grid:?}");
 
-        let (gains, special, holds) = self.check_bonus(
-            request,
-            counter_idx,
-            arg.round_multiplier,
-            &grid,
-            prev_grid,
-            prev_info,
-            prev_total,
-        )?;
+        let (gains, special, holds) = self.check_bonus(request, counter_idx, arg.round_multiplier, &grid, prev_grid, prev_info, prev_total)?;
         let total = special.total;
 
         let (next_act, restore, extra_data) = if special.respins > 0 {
@@ -641,20 +553,13 @@ impl<R: ThunderExpressRand> SlotMath for ThunderExpressMath<R> {
         Ok(result)
     }
 
-    fn post_process(
-        &mut self,
-        kind: ActionKind,
-        mut data: GameData<Self::Special, Self::Restore>,
-    ) -> Result<Arc<GameData<Self::Special, Self::Restore>>, ServerError> {
+    fn post_process(&mut self, kind: ActionKind, mut data: GameData<Self::Special, Self::Restore>) -> Result<Arc<GameData<Self::Special, Self::Restore>>, ServerError> {
         data.set_next_act(kind);
         self.result = Arc::new(data);
         Ok(self.result.clone())
     }
 
-    fn close(
-        &self,
-        next_act: ActionKind,
-    ) -> Result<GameData<Self::Special, Self::Restore>, ServerError> {
+    fn close(&self, next_act: ActionKind) -> Result<GameData<Self::Special, Self::Restore>, ServerError> {
         match self.result.as_ref() {
             GameData::Spin(v) => Ok(GameData::Spin(SpinData {
                 next_act,
@@ -668,16 +573,10 @@ impl<R: ThunderExpressRand> SlotMath for ThunderExpressMath<R> {
         }
     }
 
-    fn collect(
-        &self,
-        request: &Request,
-        arg: SpinArg,
-    ) -> Result<GameData<Self::Special, Self::Restore>, ServerError> {
+    fn collect(&self, request: &Request, arg: SpinArg) -> Result<GameData<Self::Special, Self::Restore>, ServerError> {
         let (category, result, free_game) = match self.result.as_ref() {
             GameData::Initial(v) => (v.category, v.result.clone(), v.free.clone()),
-            GameData::Spin(v) | GameData::ReSpin(v) => {
-                (v.category, v.result.clone(), v.free.clone())
-            }
+            GameData::Spin(v) | GameData::ReSpin(v) => (v.category, v.result.clone(), v.free.clone()),
             GameData::Collect(v) => (v.category, v.result.clone(), v.free.clone()),
             _ => return Err(err_on!("Illegal state!")),
         };

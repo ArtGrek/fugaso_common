@@ -37,3 +37,4 @@ impl DatabaseStore for ThunderExpressInfo {
         self.stop.unwrap_or(0)
     }
 }
+

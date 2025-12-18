@@ -9,10 +9,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ThunderExpressConfig {
-    #[serde(
-        deserialize_with = "deserialize_vec_reels",
-        serialize_with = "serialize_vec_reels"
-    )]
+    #[serde(deserialize_with = "deserialize_vec_reels", serialize_with = "serialize_vec_reels")]
     pub reels: Vec<Vec<Vec<char>>>,
     #[serde(deserialize_with = "deserialize_lines")]
     pub lines: Vec<Vec<usize>>,
@@ -47,7 +44,7 @@ pub mod thunder_express {
     use fugaso_math::config::ReelDist;
 
     pub const BASE_CATEGORY: usize = 0;
-    pub const BONUS_OFFSET: usize = 1;
+    pub const BONUS_OFFSET: usize = 2;
     pub const BONUS_COUNT: i32 = 3;
     pub const SYM_NONE: char = 'P';
     pub const SYM_WILD: char = 'I';

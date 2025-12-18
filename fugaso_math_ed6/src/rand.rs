@@ -14,19 +14,11 @@ use crate::config::{thunder_express, ThunderExpressConfig};
 pub trait ThunderExpressRand {
     fn rand_buy_cols(&mut self, category: usize) -> Result<(Vec<usize>, Vec<Vec<char>>)>;
 
-    fn rand_cols_group(
-        &mut self,
-        category: usize,
-        combos: Option<Vec<usize>>,
-    ) -> Result<(Vec<usize>, Vec<Vec<char>>)>;
+    fn rand_cols_group(&mut self, category: usize, combos: Option<Vec<usize>>) -> Result<(Vec<usize>, Vec<Vec<char>>)>;
 
     fn rand_mults(&mut self, grid: &Vec<Vec<char>>, counter_idx: usize) -> Result<Vec<Vec<i32>>>;
 
-    fn rand_cols(
-        &mut self,
-        category: usize,
-        combos: Option<Vec<usize>>,
-    ) -> (Vec<usize>, Vec<Vec<char>>);
+    fn rand_cols(&mut self, category: usize, combos: Option<Vec<usize>>) -> (Vec<usize>, Vec<Vec<char>>);
 
     fn rand_over(&mut self, grid: &Vec<Vec<char>>) -> Result<Option<Vec<Vec<char>>>>;
 }
@@ -62,7 +54,7 @@ impl ThunderExpressRand for ThunderExpressRandom {
                     .iter()
                     .enumerate()
                     .filter_map(|(i, (_k, v))| {
-                        if v.iter().any(|s| thunder_express::is_coin(*s)) {
+                        if v.iter().any(|s| thunder_express::is_coin(*s) || *s == thunder_express::SYM_COLLECT) {
                             Some(i)
                         } else {
                             None
@@ -83,18 +75,11 @@ impl ThunderExpressRand for ThunderExpressRandom {
                     .ok_or_else(|| err_on!("random find item error!"))
             })
             .collect::<Result<Vec<_>>>()?;
-        let (stops, grid) = (
-            stops_grid.iter().map(|p| p.0).collect::<Vec<_>>(),
-            stops_grid.into_iter().map(|p| p.1).collect::<Vec<_>>(),
-        );
+        let (stops, grid) = (stops_grid.iter().map(|p| p.0).collect::<Vec<_>>(), stops_grid.into_iter().map(|p| p.1).collect::<Vec<_>>());
         Ok((stops, grid))
     }
 
-    fn rand_cols_group(
-        &mut self,
-        category: usize,
-        combos: Option<Vec<usize>>,
-    ) -> Result<(Vec<usize>, Vec<Vec<char>>)> {
+    fn rand_cols_group(&mut self, category: usize, combos: Option<Vec<usize>>) -> Result<(Vec<usize>, Vec<Vec<char>>)> {
         let (stops, grid) = self.p.rand_cols_group(category, combos)?;
         Ok((stops, grid))
     }
@@ -116,11 +101,7 @@ impl ThunderExpressRand for ThunderExpressRandom {
             .collect::<Result<Vec<_>>>()
     }
 
-    fn rand_cols(
-        &mut self,
-        category: usize,
-        combos: Option<Vec<usize>>,
-    ) -> (Vec<usize>, Vec<Vec<char>>) {
+    fn rand_cols(&mut self, category: usize, combos: Option<Vec<usize>>) -> (Vec<usize>, Vec<Vec<char>>) {
         self.p.rand_cols(category, combos)
     }
 
@@ -133,7 +114,7 @@ impl ThunderExpressRand for ThunderExpressRandom {
                 .enumerate()
                 .flat_map(|(c, col)| {
                     col.iter().enumerate().filter_map(move |(r, s)| {
-                        if *s != thunder_express::SYM_COLLECT || !thunder_express::is_coin(*s) {
+                        if *s != thunder_express::SYM_COLLECT && !thunder_express::is_coin(*s) {
                             Some((c, r))
                         } else {
                             None
@@ -142,14 +123,7 @@ impl ThunderExpressRand for ThunderExpressRandom {
                 })
                 .collect::<Vec<_>>();
 
-            let all = over
-                .iter()
-                .flat_map(|r| {
-                    r.iter().filter(|c| {
-                        **c == thunder_express::SYM_COLLECT || thunder_express::is_coin(**c)
-                    })
-                })
-                .count();
+            let all = over.iter().flat_map(|r| r.iter().filter(|c| **c == thunder_express::SYM_COLLECT || thunder_express::is_coin(**c))).count();
             debug!("all: {all} - {over:?}");
             if r > all {
                 let mut remain = r - all;
@@ -157,14 +131,20 @@ impl ThunderExpressRand for ThunderExpressRandom {
                 if positions.len() < remain {
                     return Err(err_on!("positions array is illegal!"));
                 }
+                const CENTER_COL: usize = 2;
                 while remain > 0 {
                     let (col, row) = self.p.base.rand.rand_vec_remove(&mut positions)?;
-                    if col == 1 {
+                    if col == CENTER_COL {
                         over[col][row] = thunder_express::SYM_COLLECT;
                     } else {
                         over[col][row] = thunder_express::SYM_COINS[0];
                     }
                     remain -= 1;
+                }
+                let collects = over.iter().flat_map(|r| r.iter().filter(|c| **c == thunder_express::SYM_COLLECT)).count();
+                if collects == 0 {
+                    let r = self.p.base.rand.random(0, over[CENTER_COL].len());
+                    over[CENTER_COL][r] = thunder_express::SYM_COLLECT;
                 }
             }
 
