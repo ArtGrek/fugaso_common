@@ -47,6 +47,8 @@ fn create_logger_config(name: &str) -> Config {
         .logger(Logger::builder().build("fugaso_math_ed3::math", LevelFilter::Warn))
         .logger(Logger::builder().build("fugaso_math_ed4::math", LevelFilter::Warn))
         .logger(Logger::builder().build("fugaso_math_ed5::math", LevelFilter::Warn))
+        .logger(Logger::builder().build("fugaso_math_ed6::math", LevelFilter::Debug))
+        .logger(Logger::builder().build("fugaso_math_ed7::math", LevelFilter::Debug))
         .build(
             Root::builder()
                 .appender("stdout")

@@ -8,7 +8,8 @@ members = [
     "fugaso_data",
     "fugaso_config",
     "fugaso_test",
-    "fugaso_math_ed6"
+    "fugaso_math_ed6",
+    "fugaso_math_ed7"
 ]
 
 [workspace.dependencies]

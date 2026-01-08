@@ -16,6 +16,7 @@ fugaso_test = { path = "../fugaso_test" }
 fugaso_core = { path = "../fugaso_core" }
 fugaso_math = { path = "../fugaso_math" }
 fugaso_math_ed6 = { path = "../fugaso_math_ed6" }
+fugaso_math_ed7 = { path = "../fugaso_math_ed7" }
 fugaso_config = { path = "../fugaso_config" }
 serde.workspace = true
 sea-orm.workspace = true

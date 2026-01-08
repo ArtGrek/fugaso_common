@@ -13,6 +13,7 @@ use essential_data::repo::TypedRepository;
 use essential_data::{account_account, account_entry, account_transaction};
 use essential_test::database_configuration::{insert_euro_currency, setup_schema};
 use fugaso_math_ed6::math::ThunderExpressMath;
+use fugaso_math_ed7::math::MegaThunderMath;
 use log::info;
 
 use moka::future::Cache;
@@ -339,7 +340,9 @@ impl<D: IDispacthercontext + Send + Sync + 'static> ServerConfig<D> {
         let (config, reels_cfg) = (None, None);
         if g.math_class == stringify!(ThunderExpressMath) {
             self.create_game_dispatcher(ThunderExpressMath::new(config, reels_cfg)?, g, replay).await
-        } else {
+        } else if g.math_class == stringify!(MegaThunderMath) {
+            self.create_game_dispatcher(MegaThunderMath::new(config, reels_cfg)?, g, replay).await
+        }  else {
             Err(err_on!("game is not supported!"))
         }
     }
