@@ -143,6 +143,7 @@ async fn assert_series(
         let input = &p["in"];
         let expected = &p["out"];
         if expected[0]["subType"] == "SPIN" || expected[0]["subType"] == "RESPIN" {
+            println!("prewiev: {}", expected[0]);
             let game_data = parse_game_data::<Math>(expected[0].clone());
             let spin_data = match game_data {
                 GameData::Spin(d) => d,
@@ -183,6 +184,8 @@ async fn assert_series(
         let text = response.text().await.unwrap();
 
         let actual: Value = serde_json::from_str(&text).expect("error parse json");
+        println!("expected: {expected}");
+        println!("actual: {actual}");
         assert_answer(&expected, &actual, "{}".to_string(), &excludes);
 
         if expected[0]["nextAct"] == "COLLECT" {

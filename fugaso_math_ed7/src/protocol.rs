@@ -4,13 +4,9 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct MegaThunderInfo {
+pub struct MegaThunderDelInfo {
     #[serde(default)]
     pub total: i64,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub mults: Vec<Vec<i32>>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub mults1: Vec<Vec<i32>>,
     pub respins: i32,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub overlay: Option<Vec<Vec<char>>>,
@@ -18,6 +14,26 @@ pub struct MegaThunderInfo {
     pub accum: i64,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stop: Option<i32>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub mults: Vec<Vec<i32>>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub mults1: Vec<Vec<i32>>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct MegaThunderInfo {
+    #[serde(default)]
+    pub total: i64,
+    pub respins: i32,
+    #[serde(default)]
+    pub accum: i64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub stop: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub overlay: Option<Vec<Vec<char>>>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub mults: Vec<Vec<i32>>,
 }
 
 impl DatabaseStore for MegaThunderInfo {

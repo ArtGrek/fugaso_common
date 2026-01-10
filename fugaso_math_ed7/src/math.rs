@@ -79,7 +79,7 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
         Ok(m)
     }
 
-    fn create_collects(
+    fn _create_collects(
         &self,
         grid: &Vec<Vec<char>>,
         sum: i32,
@@ -111,7 +111,7 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
     ) -> Result<(Vec<Gain>, Vec<i32>, MegaThunderInfo), ServerError> {
         let lines = &self.config.lines;
         let combs = &self.config.wins;
-        let mut gains = lines
+        let gains = lines
             .iter()
             .enumerate()
             .filter_map(|(line_num, l)| {
@@ -173,7 +173,7 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
         debug!("coins: {coins} scatters: {scatters}");
 
         let mults = self.rand.rand_mults(grid_on, counter_idx)?;
-        let (mults1, mut respins) = if scatters > 0 && coins >= grid.len() - 1 {
+        /*let (mults1, mut respins) = if scatters > 0 && coins >= grid.len() - 1 {
             let sum = mults.iter().flat_map(|c| c.iter()).sum::<i32>();
             (
                 self.create_collects(grid_on, sum, &mults),
@@ -195,7 +195,8 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
             };
             (mults1, 0)
         };
-        debug!("mults1: {mults1:?}");
+        debug!("mults1: {mults1:?}");*/
+        let mut respins = if scatters > 0 && coins >= grid.len() - 1 {mega_thunder::BONUS_COUNT} else {0};
         let mut total = gains.iter().map(|w| w.amount).sum();
 
         let max = self.calc_max_win(req);
@@ -209,7 +210,6 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
 
         let special = MegaThunderInfo {
             mults,
-            mults1,
             respins,
             overlay,
             total,
@@ -243,18 +243,18 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
             .flat_map(|c| c.iter().filter(|v| mega_thunder::is_coin(**v)))
             .count();
 
-        let mut mults = self.rand.rand_mults(&grid, counter_idx)?;
+        let mults = self.rand.rand_mults(&grid, counter_idx)?;
         debug!("mults: {mults:?}");
-        for c in 0..mults.len() {
+        /*for c in 0..mults.len() {
             for r in 0..mults[c].len() {
                 if prev_info.mults1[c][r] > 0 {
                     mults[c][r] = prev_info.mults1[c][r];
                 }
             }
-        }
+        }*/
         debug!("coins: {coins:?}");
 
-        let (mults1, mut respins) = if coins > 0 {
+        /*let (mults1, mut respins) = if coins > 0 {
             let sum = mults
                 .iter()
                 .enumerate()
@@ -278,10 +278,18 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
                 prev_info.respins - 1
             };
             (prev_info.mults1.clone(), respins)
+        };*/
+        let mut respins = if coins > 0 {mega_thunder::BONUS_COUNT} else {
+            let respins = if scatters > prev_scatters {
+                mega_thunder::BONUS_COUNT
+            } else {
+                prev_info.respins - 1
+            };
+            respins
         };
 
         let max = self.calc_max_win(req);
-        let gains_end = self.calc_gains(req, multiplier, &mults1);
+        let gains_end = self.calc_gains(req, multiplier, &mults);
         let stop = if prev_total + gains_end.iter().map(|g| g.amount).sum::<i64>() >= max {
             respins = 0;
             Some(self.config.stop_factor)
@@ -298,7 +306,6 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
             gains,
             MegaThunderInfo {
                 mults,
-                mults1,
                 respins,
                 total,
                 accum,
@@ -362,6 +369,14 @@ impl<R: MegaThunderRand> SlotMath for MegaThunderMath<R> {
             GameData::Collect(v) => v.result.clone(),
             _ => return Err(err_on!("Illegal state!")),
         };
+        let mut wins = self.config.wins.iter().flat_map(|p| {
+            p.1.iter().map(|w| Win {
+                symbol: *p.0,
+                count: *w.0,
+                factor: *w.1,
+            })
+        }).collect::<Vec<Win>>();
+        wins.sort_by(|a, b| {a.symbol.cmp(&b.symbol).then(a.count.cmp(&b.count)).then(a.factor.cmp(&b.factor))});
 
         Ok(GameData::Initial(InitialData {
             id: id::GAME_DATA,
@@ -371,18 +386,7 @@ impl<R: MegaThunderRand> SlotMath for MegaThunderMath<R> {
             max_bet: 0,
             lines: self.config.lines.clone(),
             reels: self.config.reels.clone(),
-            wins: self
-                .config
-                .wins
-                .iter()
-                .flat_map(|p| {
-                    p.1.iter().map(|w| Win {
-                        symbol: *p.0,
-                        count: *w.0,
-                        factor: *w.1,
-                    })
-                })
-                .collect(),
+            wins,
             category: 0,
             result,
             poss_lines: arg.poss_lines,
