@@ -173,6 +173,7 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
         debug!("coins: {coins} scatters: {scatters}");
 
         let mults = self.rand.rand_mults(grid_on, counter_idx)?;
+        let lifts = vec![vec![0; 3]; 5];
         /*let (mults1, mut respins) = if scatters > 0 && coins >= grid.len() - 1 {
             let sum = mults.iter().flat_map(|c| c.iter()).sum::<i32>();
             (
@@ -210,6 +211,7 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
 
         let special = MegaThunderInfo {
             mults,
+            lifts,
             respins,
             overlay,
             total,
