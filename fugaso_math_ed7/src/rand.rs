@@ -22,6 +22,8 @@ pub trait MegaThunderRand {
 
     fn rand_mults(&mut self, grid: &Vec<Vec<char>>, counter_idx: usize) -> Result<Vec<Vec<i32>>>;
 
+    fn rand_lifts(&mut self, grid: &Vec<Vec<char>>, counter_idx: usize) -> Result<Vec<Vec<i32>>>;
+
     fn rand_cols(
         &mut self,
         category: usize,
@@ -109,6 +111,23 @@ impl MegaThunderRand for MegaThunderRandom {
                             self.p.base.rand.rand_value(&dist)
                         } else {
                             self.p.base.config.map_jack.get(s).map_or(Ok(0), |m| Ok(*m))
+                        }
+                    })
+                    .collect::<Result<Vec<_>>>()
+            })
+            .collect::<Result<Vec<_>>>()
+    }
+
+    fn rand_lifts(&mut self, grid: &Vec<Vec<char>>, counter_idx: usize) -> Result<Vec<Vec<i32>>> {
+        let dist = &self.p.base.config.dist_coin[counter_idx];
+        grid.iter()
+            .map(|c| {
+                c.iter()
+                    .map(|s| {
+                        if *s == mega_thunder::SYM_COINS[1] {
+                            self.p.base.rand.rand_value(&dist)
+                        } else {
+                            Ok(0)
                         }
                     })
                     .collect::<Result<Vec<_>>>()

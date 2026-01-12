@@ -43,6 +43,7 @@ async fn create_server_cfg() -> TestConfig {
     rand.expect_rand_cols_group().return_const(Ok((vec![0; gconf::CFG.reels[0].len()], (0..gconf::CFG.reels[0].len()).map(|_| vec!['H'; gconf::ROWS]).collect())));
 
     rand.expect_rand_mults().return_const(Ok((0..gconf::CFG.reels[0].len()).map(|_| vec![0; gconf::ROWS]).collect()));
+    rand.expect_rand_lifts().return_const(Ok((0..gconf::CFG.reels[0].len()).map(|_| vec![0; gconf::ROWS]).collect()));
 
     let math = MegaThunderMath::configured(rand).expect("math load error!");
     let dispatcher = cfg.create_slot_dispatcher(math, game).await.expect("error dispatcher load!");
@@ -68,6 +69,11 @@ fn parse_list(p: &str) -> VecDeque<Value> {
 #[tokio::test]
 async fn test_spin_no_win() {
     test_series("00-no_win.json").await;
+}
+
+#[tokio::test]
+async fn test_spin_win() {
+    test_series("01-win.json").await;
 }
 
 #[tokio::test]
@@ -143,7 +149,7 @@ async fn assert_series(
         let input = &p["in"];
         let expected = &p["out"];
         if expected[0]["subType"] == "SPIN" || expected[0]["subType"] == "RESPIN" {
-            println!("prewiev: {}", expected[0]);
+            //println!("prewiev: {}", expected[0]);
             let game_data = parse_game_data::<Math>(expected[0].clone());
             let spin_data = match game_data {
                 GameData::Spin(d) => d,
@@ -159,7 +165,9 @@ async fn assert_series(
 
             if let Some(s) = spin_data.result.special {
                 let mults = s.mults.clone();
+                let lifts = s.lifts.clone();
                 rand.expect_rand_mults().return_const(Ok(mults.clone()));
+                rand.expect_rand_lifts().return_const(Ok(lifts.clone()));
 
                 rand.expect_rand_over().return_const(Ok(s.overlay));
             }
