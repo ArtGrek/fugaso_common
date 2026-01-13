@@ -111,41 +111,37 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
     ) -> Result<(Vec<Gain>, Vec<i32>, MegaThunderInfo), ServerError> {
         let lines = &self.config.lines;
         let combs = &self.config.wins;
-        let gains = lines
-            .iter()
-            .enumerate()
-            .filter_map(|(line_num, l)| {
-                let mut w = grid[0][l[0]];
-                let mut symbols = 0;
+        let gains = lines.iter().enumerate().filter_map(|(line_num, l)| {
+            let mut w = grid[0][l[0]];
+            let mut symbols = 0;
 
-                for j in 0..l.len() {
-                    let ch = grid[j][l[j]];
-                    if w == mega_thunder::SYM_WILD {
-                        w = ch
-                    }
-                    if w == ch || ch == mega_thunder::SYM_WILD {
-                        symbols += 1;
-                    } else {
-                        break;
-                    }
+            for j in 0..l.len() {
+                let ch = grid[j][l[j]];
+                if w == mega_thunder::SYM_WILD {
+                    w = ch
                 }
-
-                let factor = *combs.get(&w).and_then(|m| m.get(&symbols)).unwrap_or(&0);
-                if factor > 0 {
-                    let amount = factor as i64 * req.bet as i64 * round_mul as i64;
-                    Some(Gain {
-                        symbol: w,
-                        count: symbols,
-                        amount,
-                        line_num,
-                        multi: 1,
-                        ..Default::default()
-                    })
+                if w == ch || ch == mega_thunder::SYM_WILD {
+                    symbols += 1;
                 } else {
-                    None
+                    break;
                 }
-            })
-            .collect::<Vec<_>>();
+            }
+
+            let factor = *combs.get(&w).and_then(|m| m.get(&symbols)).unwrap_or(&0);
+            if factor > 0 {
+                let amount = factor as i64 * req.bet as i64 * round_mul as i64;
+                Some(Gain {
+                    symbol: w,
+                    count: symbols,
+                    amount,
+                    line_num,
+                    multi: 1,
+                    ..Default::default()
+                })
+            } else {
+                None
+            }
+        }).collect::<Vec<_>>();
 
         let scatters = grid
             .iter()
@@ -172,34 +168,42 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
             .count();
         debug!("coins: {coins} scatters: {scatters}");
 
+        let mut have_coin = false;
+        let mut have_mutiplier = false;
         let mults = self.rand.rand_mults(grid_on, counter_idx)?;
-        let lifts = self.rand.rand_lifts(grid_on, counter_idx)?;
+        debug!("mults: {mults:?}");
+        let mut lifts = vec![vec![0; 3]; 5];
+        mults.iter().enumerate().for_each(|(col_num, col)| {
+            col.iter().enumerate().for_each(|(row_num, row)| {
+                if *row != 0 {
+                    if grid_on[col_num][row_num] == mega_thunder::SYM_COLLECT {have_coin = true;}
+                    lifts[col_num][row_num] = 1;
+                }
+            });
+        });
+        let lifts_new = self.rand.rand_lifts_new(grid_on, counter_idx)?;
+        debug!("lifts_new: {lifts_new:?}");
+        lifts_new.iter().for_each(|lift| {
+            have_mutiplier = true;
+            lifts.iter_mut().for_each(|lc| {
+                lc.iter_mut().for_each(|l| {
+                    *l *= lift.m;
+                });
+            });
+        });
+        debug!("lifts: {lifts:?}");
+        let total_coins_win = if have_coin && have_mutiplier {
+            mults.iter().enumerate().map(|(col_num, col)| {
+                col.iter().enumerate().map(|(row_num, row)| {
+                    row * lifts[col_num][row_num] * req.bet * req.denom
+                }).sum::<i32>()
+            }).sum::<i32>()
+        } else {0};
 
-        /*let (mults1, mut respins) = if scatters > 0 && coins >= grid.len() - 1 {
-            let sum = mults.iter().flat_map(|c| c.iter()).sum::<i32>();
-            (
-                self.create_collects(grid_on, sum, &mults),
-                mega_thunder::BONUS_COUNT,
-            )
-        } else {
-            let mults1 = if scatters > 0 && coins > 0 {
-                let sum = mults.iter().flat_map(|c| c.iter()).sum::<i32>();
-                let amount = sum as i64 * req.bet as i64 * req.denom as i64 * round_mul as i64;
-                gains.extend((0..scatters).map(|_| Gain {
-                    symbol: mega_thunder::SYM_COLLECT,
-                    amount,
-                    multi: 1,
-                    ..Default::default()
-                }));
-                self.create_collects(grid, sum, &mults)
-            } else {
-                vec![]
-            };
-            (mults1, 0)
-        };
-        debug!("mults1: {mults1:?}");*/
+
+        
         let mut respins = if scatters > 0 && coins >= grid.len() - 1 {mega_thunder::BONUS_COUNT} else {0};
-        let mut total = gains.iter().map(|w| w.amount).sum();
+        let mut total = gains.iter().map(|w| w.amount).sum::<i64>() + total_coins_win as i64;
 
         let max = self.calc_max_win(req);
         let stop = if total >= max {
@@ -213,6 +217,7 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
         let special = MegaThunderInfo {
             mults,
             lifts,
+            lifts_new,
             respins,
             overlay,
             total,
@@ -508,7 +513,7 @@ impl<R: MegaThunderRand> SlotMath for MegaThunderMath<R> {
 
         let (gains, holds, special) =
             self.check_lines(request, count_idx, arg.round_multiplier, &grid)?;
-        let total = gains.iter().map(|g| g.amount).sum();
+        let total = special.total;
         let (next_act, restore) = if special.respins > 0 {
             let grid_on = match special.overlay.as_ref() {
                 None => grid.clone(),

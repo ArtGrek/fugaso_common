@@ -18,6 +18,7 @@ pub struct MegaThunderConfig {
     pub lines: Vec<Vec<usize>>,
     pub wins: HashMap<char, HashMap<usize, i32>>,
     pub dist_coin: Vec<BTreeMap<i32, i32>>,
+    pub dist_mult: Vec<BTreeMap<i32, i32>>,
     pub dist_over: BTreeMap<i32, usize>,
     #[serde(default)]
     pub dist_base_category: BTreeMap<i32, usize>,

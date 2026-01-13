@@ -43,7 +43,7 @@ async fn create_server_cfg() -> TestConfig {
     rand.expect_rand_cols_group().return_const(Ok((vec![0; gconf::CFG.reels[0].len()], (0..gconf::CFG.reels[0].len()).map(|_| vec!['H'; gconf::ROWS]).collect())));
 
     rand.expect_rand_mults().return_const(Ok((0..gconf::CFG.reels[0].len()).map(|_| vec![0; gconf::ROWS]).collect()));
-    rand.expect_rand_lifts().return_const(Ok((0..gconf::CFG.reels[0].len()).map(|_| vec![0; gconf::ROWS]).collect()));
+    rand.expect_rand_lifts_new().return_const(Ok(Vec::new()));
 
     let math = MegaThunderMath::configured(rand).expect("math load error!");
     let dispatcher = cfg.create_slot_dispatcher(math, game).await.expect("error dispatcher load!");
@@ -77,8 +77,18 @@ async fn test_spin_win() {
 }
 
 #[tokio::test]
-async fn test_spin_bonus_win() {
-    test_series("02-fs.json").await;
+async fn test_spin_multi_2() {
+    test_series("11-s-multi_2.json").await;
+}
+
+#[tokio::test]
+async fn test_respin_multi_5() {
+    test_series("23-fs-multi_5.json").await;
+}
+
+#[tokio::test]
+async fn test_respin_grand() {
+    test_series("24-fs-grand.json").await;
 }
 
 async fn test_series(name: &str) {
@@ -165,9 +175,9 @@ async fn assert_series(
 
             if let Some(s) = spin_data.result.special {
                 let mults = s.mults.clone();
-                let lifts = s.lifts.clone();
+                let lifts_new = s.lifts_new.clone();
                 rand.expect_rand_mults().return_const(Ok(mults.clone()));
-                rand.expect_rand_lifts().return_const(Ok(lifts.clone()));
+                rand.expect_rand_lifts_new().return_const(Ok(lifts_new.clone()));
 
                 rand.expect_rand_over().return_const(Ok(s.overlay));
             }

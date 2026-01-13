@@ -9,6 +9,7 @@ use log::debug;
 use mockall::*;
 
 use crate::config::{mega_thunder, MegaThunderConfig};
+use crate::protocol::LiftItem;
 
 #[automock]
 pub trait MegaThunderRand {
@@ -21,8 +22,8 @@ pub trait MegaThunderRand {
     ) -> Result<(Vec<usize>, Vec<Vec<char>>)>;
 
     fn rand_mults(&mut self, grid: &Vec<Vec<char>>, counter_idx: usize) -> Result<Vec<Vec<i32>>>;
-
-    fn rand_lifts(&mut self, grid: &Vec<Vec<char>>, counter_idx: usize) -> Result<Vec<Vec<i32>>>;
+    
+    fn rand_lifts_new(&mut self, grid: &Vec<Vec<char>>, counter_idx: usize) -> Result<Vec<LiftItem>>;
 
     fn rand_cols(
         &mut self,
@@ -118,19 +119,26 @@ impl MegaThunderRand for MegaThunderRandom {
             .collect::<Result<Vec<_>>>()
     }
 
-    fn rand_lifts(&mut self, grid: &Vec<Vec<char>>, counter_idx: usize) -> Result<Vec<Vec<i32>>> {
-        let dist = &self.p.base.config.dist_coin[counter_idx];
+    fn rand_lifts_new(&mut self, grid: &Vec<Vec<char>>, counter_idx: usize) -> Result<Vec<LiftItem>> {
+        let dist_coin = &self.p.base.config.dist_coin[counter_idx];
+        let dist_mult = &self.p.base.config.dist_mult[counter_idx];
         grid.iter()
-            .map(|c| {
-                c.iter()
-                    .map(|s| {
-                        if *s == mega_thunder::SYM_COINS[1] {
-                            self.p.base.rand.rand_value(&dist)
-                        } else {
-                            Ok(0)
-                        }
-                    })
-                    .collect::<Result<Vec<_>>>()
+            .enumerate()
+            .flat_map(|(col_idx, col)| {
+                col.iter().enumerate().filter_map(move |(row_idx, symbol)| {
+                    if *symbol == mega_thunder::SYM_COINS[1] {
+                        Some((col_idx, row_idx))
+                    } else {
+                        None
+                    }
+                })
+            })
+            .map(|(col, row)| {
+                Ok(LiftItem {
+                    p: (col, row),
+                    m: self.p.base.rand.rand_value(&dist_mult)?,
+                    v: self.p.base.rand.rand_value(&dist_coin)?,
+                })
             })
             .collect::<Result<Vec<_>>>()
     }
