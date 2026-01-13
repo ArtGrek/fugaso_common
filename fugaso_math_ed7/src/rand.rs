@@ -65,7 +65,7 @@ impl MegaThunderRand for MegaThunderRandom {
                     .iter()
                     .enumerate()
                     .filter_map(|(i, (_k, v))| {
-                        if v.iter().any(|s| mega_thunder::is_coin(*s)) {
+                        if v.iter().any(|s| mega_thunder::is_spetials(*s)) {
                             Some(i)
                         } else {
                             None
@@ -108,7 +108,7 @@ impl MegaThunderRand for MegaThunderRandom {
             .map(|c| {
                 c.iter()
                     .map(|s| {
-                        if *s == mega_thunder::SYM_COINS[0] {
+                        if *s == mega_thunder::SYM_SPETIALS[0] {
                             self.p.base.rand.rand_value(&dist)
                         } else {
                             self.p.base.config.map_jack.get(s).map_or(Ok(0), |m| Ok(*m))
@@ -126,7 +126,7 @@ impl MegaThunderRand for MegaThunderRandom {
             .enumerate()
             .flat_map(|(col_idx, col)| {
                 col.iter().enumerate().filter_map(move |(row_idx, symbol)| {
-                    if *symbol == mega_thunder::SYM_COINS[1] {
+                    if *symbol == mega_thunder::SYM_SPETIALS[1] {
                         Some((col_idx, row_idx))
                     } else {
                         None
@@ -160,7 +160,7 @@ impl MegaThunderRand for MegaThunderRandom {
                 .enumerate()
                 .flat_map(|(c, col)| {
                     col.iter().enumerate().filter_map(move |(r, s)| {
-                        if *s != mega_thunder::SYM_COLLECT || !mega_thunder::is_coin(*s) {
+                        if *s != mega_thunder::SYM_COIN || !mega_thunder::is_spetials(*s) {
                             Some((c, r))
                         } else {
                             None
@@ -173,7 +173,7 @@ impl MegaThunderRand for MegaThunderRandom {
                 .iter()
                 .flat_map(|r| {
                     r.iter().filter(|c| {
-                        **c == mega_thunder::SYM_COLLECT || mega_thunder::is_coin(**c)
+                        **c == mega_thunder::SYM_COIN || mega_thunder::is_spetials(**c)
                     })
                 })
                 .count();
@@ -187,9 +187,9 @@ impl MegaThunderRand for MegaThunderRandom {
                 while remain > 0 {
                     let (col, row) = self.p.base.rand.rand_vec_remove(&mut positions)?;
                     if col == 1 {
-                        over[col][row] = mega_thunder::SYM_COLLECT;
+                        over[col][row] = mega_thunder::SYM_COIN;
                     } else {
-                        over[col][row] = mega_thunder::SYM_COINS[0];
+                        over[col][row] = mega_thunder::SYM_SPETIALS[0];
                     }
                     remain -= 1;
                 }

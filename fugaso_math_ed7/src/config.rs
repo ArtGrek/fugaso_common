@@ -52,8 +52,10 @@ pub mod mega_thunder {
     pub const BONUS_COUNT: i32 = 3;
     pub const SYM_NONE: char = 'P';
     pub const SYM_WILD: char = 'I';
-    pub const SYM_COLLECT: char = 'J';
-    pub const SYM_COINS: [char; 5] = ['K', 'L', 'M', 'N', 'O']; //coin & jackpots
+    pub const SYM_COIN: char = 'J';
+    pub const SYM_JACKPOT: char = 'K';
+    pub const SYM_MULTI: char = 'L';
+    pub const SYM_SPETIALS: [char; 3] = ['J', 'K', 'L']; //coin & jackpots
     pub const ROWS: usize = 3;
 
     lazy_static! {
@@ -69,7 +71,7 @@ pub mod mega_thunder {
         };
     }
 
-    pub fn is_coin(c: char) -> bool {
-        c >= SYM_COINS[0] && c <= SYM_COINS[SYM_COINS.len() - 1]
+    pub fn is_spetials(c: char) -> bool {
+        c >= SYM_SPETIALS[0] && c <= SYM_SPETIALS[SYM_SPETIALS.len() - 1]
     }
 }
