@@ -201,8 +201,9 @@ async fn assert_series(
         let text = response.text().await.unwrap();
 
         let actual: Value = serde_json::from_str(&text).expect("error parse json");
-        log::debug!("expected: {expected}");
-        log::debug!("actual: {actual}");
+        //println!("");
+        //println!("{expected}");
+        //println!("{actual}");
         assert_answer(&expected, &actual, "{}".to_string(), &excludes);
 
         if expected[0]["nextAct"] == "COLLECT" {

@@ -104,43 +104,35 @@ impl MegaThunderRand for MegaThunderRandom {
 
     fn rand_mults(&mut self, grid: &Vec<Vec<char>>, counter_idx: usize) -> Result<Vec<Vec<i32>>> {
         let dist = &self.p.base.config.dist_coin[counter_idx];
-        grid.iter()
-            .map(|c| {
-                c.iter()
-                    .map(|s| {
-                        if *s == mega_thunder::SYM_SPETIALS[0] {
-                            self.p.base.rand.rand_value(&dist)
-                        } else {
-                            self.p.base.config.map_jack.get(s).map_or(Ok(0), |m| Ok(*m))
-                        }
-                    })
-                    .collect::<Result<Vec<_>>>()
-            })
-            .collect::<Result<Vec<_>>>()
+        grid.iter().map(|c| {
+            c.iter().map(|s| {
+                    if *s == mega_thunder::SYM_SPETIALS[0] {
+                        self.p.base.rand.rand_value(&dist)
+                    } else {
+                        self.p.base.config.map_jack.get(s).map_or(Ok(0), |m| Ok(*m))
+                    }
+                }).collect::<Result<Vec<_>>>()
+        }).collect::<Result<Vec<_>>>()
     }
 
     fn rand_lifts_new(&mut self, grid: &Vec<Vec<char>>, counter_idx: usize) -> Result<Vec<LiftItem>> {
         let dist_coin = &self.p.base.config.dist_coin[counter_idx];
         let dist_mult = &self.p.base.config.dist_mult[counter_idx];
-        grid.iter()
-            .enumerate()
-            .flat_map(|(col_idx, col)| {
-                col.iter().enumerate().filter_map(move |(row_idx, symbol)| {
-                    if *symbol == mega_thunder::SYM_SPETIALS[1] {
-                        Some((col_idx, row_idx))
-                    } else {
-                        None
-                    }
-                })
+        grid.iter().enumerate().flat_map(|(col_idx, col)| {
+            col.iter().enumerate().filter_map(move |(row_idx, symbol)| {
+                if *symbol == mega_thunder::SYM_SPETIALS[2] {
+                    Some((col_idx, row_idx))
+                } else {
+                    None
+                }
             })
-            .map(|(col, row)| {
-                Ok(LiftItem {
-                    p: (col, row),
-                    m: self.p.base.rand.rand_value(&dist_mult)?,
-                    v: self.p.base.rand.rand_value(&dist_coin)?,
-                })
+        }).map(|(col, row)| {
+            Ok(LiftItem {
+                p: (col, row),
+                m: self.p.base.rand.rand_value(&dist_mult)?,
+                v: self.p.base.rand.rand_value(&dist_coin)?,
             })
-            .collect::<Result<Vec<_>>>()
+        }).collect::<Result<Vec<_>>>()
     }
 
     fn rand_cols(
