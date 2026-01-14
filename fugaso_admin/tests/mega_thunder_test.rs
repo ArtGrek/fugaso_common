@@ -91,6 +91,11 @@ async fn test_respin_grand() {
     test_series("24-fs-grand.json").await;
 }
 
+#[tokio::test]
+async fn test_game() {
+    test_series("44fe51f0487c4118a5408a3c9c3af79b.json").await;
+}
+
 async fn test_series(name: &str) {
     let cfg = create_server_cfg().await;
 
@@ -201,9 +206,9 @@ async fn assert_series(
         let text = response.text().await.unwrap();
 
         let actual: Value = serde_json::from_str(&text).expect("error parse json");
-        //println!("");
-        //println!("{expected}");
-        //println!("{actual}");
+        println!("");
+        println!("{expected}");
+        println!("{actual}");
         assert_answer(&expected, &actual, "{}".to_string(), &excludes);
 
         if expected[0]["nextAct"] == "COLLECT" {

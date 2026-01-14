@@ -285,6 +285,13 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
                 }
             }
         }
+        mults.iter_mut().enumerate().for_each(|(col_num, col)| {
+            col.iter().enumerate().for_each(|(row_num, mult)| {
+                if *mult > 0 && lifts[col_num][row_num] == 0 && grid[col_num][row_num] != mega_thunder::SYM_MULTI {
+                    lifts[col_num][row_num] = 1;
+                }
+            });
+        });
         let lifts_new = self.rand.rand_lifts_new(grid, counter_idx)?;
         debug!("lifts_new: {lifts_new:?}");
         lifts_new.iter().for_each(|lift| {
@@ -293,22 +300,7 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
                     *l *= lift.m;
                 });
             });
-        });
-        mults.iter_mut().enumerate().for_each(|(col_num, col)| {
-            col.iter().enumerate().for_each(|(row_num, mult)| {
-                if *mult > 0 && lifts[col_num][row_num] == 0 {
-                    lifts[col_num][row_num] = 1;
-                }
-            });
-        });
-        prev_info.mults.iter().enumerate().for_each(|(col_num, col)| {
-            if col.iter().all(|v| *v > 0) {
-                col.iter().enumerate().for_each(|(row_num, _)| {
-                    mults[col_num][row_num] = 0;
-                    lifts[col_num][row_num] = 0;
-                    grid[col_num][row_num] = '@';
-                });
-            };
+            lifts[lift.p.0][lift.p.1] = 1;
         });
         debug!("mults: {mults:?}");
         debug!("lifts: {lifts:?}");
@@ -327,7 +319,7 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
                 } else {0}
             }).sum::<i32>();
             if !grand_granted.unwrap_or_default() && grand.iter().all(|v| *v > 0) {
-                let jp = self.config.map_jack.get(&'O').map(|m| {*m}).unwrap_or(0);
+                let jp = self.config.map_jack.get(&mega_thunder::SYM_GRAND_JACKPOT).map(|m| {*m}).unwrap_or(0);
                 total_coins_win += jp * req.bet * req.denom;
                 grand_granted = Some(true);
             }
@@ -617,21 +609,21 @@ impl<R: MegaThunderRand> SlotMath for MegaThunderMath<R> {
         combo: Option<Vec<usize>>,
     ) -> Result<GameData<Self::Special, Self::Restore>, ServerError> {
         let prev = Arc::clone(&self.result);
-        let (prev_total, prev_info, prev_grid, prev_restore) = match prev.as_ref() {
+        let (prev_total, mut prev_info, mut prev_grid, prev_restore) = match prev.as_ref() {
             GameData::Spin(v) => {
                 let prev_info = v
                     .result
                     .special
                     .as_ref()
-                    .ok_or_else(|| err_on!("Illegal state!"))?;
+                    .ok_or_else(|| err_on!("Illegal state!"))?.clone();
                 let grid = if let Some(special) = &v.result.special {
                     if let Some(over) = special.overlay.as_ref() {
-                        over
+                        over.clone()
                     } else {
-                        &v.result.grid
+                        v.result.grid.clone()
                     }
                 } else {
-                    &v.result.grid
+                    v.result.grid.clone()
                 };
                 (v.result.total, prev_info, grid, &v.result.restore)
             }
@@ -640,10 +632,20 @@ impl<R: MegaThunderRand> SlotMath for MegaThunderMath<R> {
                     .result
                     .special
                     .as_ref()
-                    .ok_or_else(|| err_on!("Illegal state!"))?;
-                (v.result.total, prev_info, &v.result.grid, &v.result.restore)
+                    .ok_or_else(|| err_on!("Illegal state!"))?.clone();
+                let grid = v.result.grid.clone();
+                (v.result.total, prev_info, grid, &v.result.restore)
             }
             _ => return Err(err_on!("Illegal state!")),
+        };
+        for col_num in 0..prev_info.mults.len() {
+            if prev_info.mults[col_num].iter().all(|v| *v > 0) {
+                for row_num in 0..prev_info.mults[col_num].len() {
+                    prev_info.mults[col_num][row_num] = 0;
+                    prev_info.lifts[col_num][row_num] = 0;
+                    prev_grid[col_num][row_num] = '@';
+                };
+            };
         };
         let counter_idx = self
             .config
@@ -653,7 +655,7 @@ impl<R: MegaThunderRand> SlotMath for MegaThunderMath<R> {
             .ok_or_else(|| err_on!("illegal bet_counter!"))?;
         let category = mega_thunder::BONUS_OFFSET + counter_idx;
         let (stops, mut grid) = self.rand.rand_cols(category, combo);
-        self.apply_prev(&mut grid, prev_grid);
+        self.apply_prev(&mut grid, &prev_grid);
         debug!("{grid:?}");
 
         let (gains, special, holds) = self.check_bonus(
@@ -661,8 +663,8 @@ impl<R: MegaThunderRand> SlotMath for MegaThunderMath<R> {
             counter_idx,
             arg.round_multiplier,
             &mut grid,
-            prev_grid,
-            prev_info,
+            &prev_grid,
+            &prev_info,
             prev_total,
         )?;
         let total = special.total;

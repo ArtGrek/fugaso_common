@@ -50,12 +50,12 @@ pub mod mega_thunder {
     pub const BASE_CATEGORY: usize = 0;
     pub const BONUS_OFFSET: usize = 1;
     pub const BONUS_COUNT: i32 = 3;
-    pub const SYM_NONE: char = 'P';
+    pub const SYM_NONE: char = 'Q';
     pub const SYM_WILD: char = 'I';
     pub const SYM_COIN: char = 'J';
-    pub const SYM_JACKPOT: char = 'K';
+    pub const SYM_GRAND_JACKPOT: char = 'P';
     pub const SYM_MULTI: char = 'L';
-    pub const SYM_SPETIALS: [char; 3] = ['J', 'K', 'L']; //coin & jackpots
+    pub const SYM_SPETIALS: [char; 6] = ['J', 'K', 'L', 'M', 'N', 'O']; //coin & jackpots
     pub const ROWS: usize = 3;
 
     lazy_static! {
