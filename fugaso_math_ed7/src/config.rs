@@ -17,8 +17,13 @@ pub struct MegaThunderConfig {
     #[serde(deserialize_with = "deserialize_lines")]
     pub lines: Vec<Vec<usize>>,
     pub wins: HashMap<char, HashMap<usize, i32>>,
-    pub dist_coin: Vec<BTreeMap<i32, i32>>,
-    pub dist_mult: Vec<BTreeMap<i32, i32>>,
+    pub dist_coin: (i32, i32),
+    pub dist_coin_value: Vec<BTreeMap<i32, i32>>,
+    pub dist_jackpot: (i32, i32),
+    pub dist_jackpot_value: Vec<BTreeMap<i32, i32>>,
+    pub dist_lift: (i32, i32),
+    pub dist_lift_mult: Vec<BTreeMap<i32, i32>>,
+    pub dist_lift_value: Vec<BTreeMap<i32, char>>,
     pub dist_over: BTreeMap<i32, usize>,
     #[serde(default)]
     pub dist_base_category: BTreeMap<i32, usize>,
@@ -30,7 +35,6 @@ pub struct MegaThunderConfig {
     #[serde(default)]
     pub dist_coin_ultra: BTreeMap<i32, i32>,
     pub map_jack: HashMap<char, i32>,
-    pub dist_new_coin: Vec<Vec<f64>>,
 }
 
 impl BaseConfig for MegaThunderConfig {
@@ -50,13 +54,14 @@ pub mod mega_thunder {
     pub const BASE_CATEGORY: usize = 0;
     pub const BONUS_OFFSET: usize = 1;
     pub const BONUS_COUNT: i32 = 3;
-    pub const SYM_NONE: char = 'Q';
+    pub const ROWS: usize = 3;
     pub const SYM_WILD: char = 'I';
     pub const SYM_COIN: char = 'J';
-    pub const SYM_GRAND_JACKPOT: char = 'P';
+    pub const SYM_JACKPOT: char = 'K';
     pub const SYM_MULTI: char = 'L';
-    pub const SYM_SPETIALS: [char; 6] = ['J', 'K', 'L', 'M', 'N', 'O']; //coin & jackpots
-    pub const ROWS: usize = 3;
+    pub const SYM_SPETIALS: [char; 3] = ['J', 'K', 'L']; //coin & jackpots
+    pub const SYM_GRAND_JACKPOT: char = 'P';
+    pub const SYM_NONE: char = 'Q';
 
     lazy_static! {
         pub static ref CFG: Arc<MegaThunderConfig> = {

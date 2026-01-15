@@ -99,12 +99,12 @@ impl MegaThunderRand for MegaThunderRandom {
         combos: Option<Vec<usize>>,
     ) -> Result<(Vec<usize>, Vec<Vec<char>>)> {
         let (stops, grid) = self.p.rand_cols_group(category, combos)?;
-        
+        //add coins
         Ok((stops, grid))
     }
 
     fn rand_mults(&mut self, grid: &Vec<Vec<char>>, counter_idx: usize) -> Result<Vec<Vec<i32>>> {
-        let dist = &self.p.base.config.dist_coin[counter_idx];
+        let dist = &self.p.base.config.dist_coin_value[counter_idx];
         grid.iter().map(|c| {
             c.iter().map(|s| {
                     if *s == mega_thunder::SYM_SPETIALS[0] {
@@ -117,8 +117,8 @@ impl MegaThunderRand for MegaThunderRandom {
     }
 
     fn rand_lifts_new(&mut self, grid: &Vec<Vec<char>>, counter_idx: usize) -> Result<Vec<LiftItem>> {
-        let dist_coin = &self.p.base.config.dist_coin[counter_idx];
-        let dist_mult = &self.p.base.config.dist_mult[counter_idx];
+        let dist_coin_value = &self.p.base.config.dist_coin_value[counter_idx];
+        let dist_lift_mult = &self.p.base.config.dist_lift_mult[counter_idx];
         grid.iter().enumerate().flat_map(|(col_idx, col)| {
             col.iter().enumerate().filter_map(move |(row_idx, symbol)| {
                 if *symbol == mega_thunder::SYM_SPETIALS[2] {
@@ -130,8 +130,8 @@ impl MegaThunderRand for MegaThunderRandom {
         }).map(|(col, row)| {
             Ok(LiftItem {
                 p: (col, row),
-                m: self.p.base.rand.rand_value(&dist_mult)?,
-                v: self.p.base.rand.rand_value(&dist_coin)?,
+                m: self.p.base.rand.rand_value(&dist_lift_mult)?,
+                v: self.p.base.rand.rand_value(&dist_coin_value)?,
             })
         }).collect::<Result<Vec<_>>>()
     }

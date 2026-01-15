@@ -28,10 +28,8 @@ pub struct MegaThunderInfo {
     pub lifts: Vec<Vec<i32>>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub lifts_new: Vec<LiftItem>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub grand: Option<Vec<i32>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub grand_granted:  Option<bool>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub grand: Vec<i32>,
 }
 
 impl DatabaseStore for MegaThunderInfo {
