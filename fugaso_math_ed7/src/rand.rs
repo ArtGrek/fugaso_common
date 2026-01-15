@@ -99,6 +99,7 @@ impl MegaThunderRand for MegaThunderRandom {
         combos: Option<Vec<usize>>,
     ) -> Result<(Vec<usize>, Vec<Vec<char>>)> {
         let (stops, grid) = self.p.rand_cols_group(category, combos)?;
+        
         Ok((stops, grid))
     }
 
