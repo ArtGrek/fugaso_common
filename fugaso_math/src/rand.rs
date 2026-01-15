@@ -86,10 +86,9 @@ impl<C: BaseConfig> GroupRandom<C> {
             }
             (s, grid)
         } else {
-            let stops_grid = reels
-                .iter()
-                .map(|dist| self.base.rand.rand_value_clone(dist))
-                .collect::<Result<Vec<_>>>()?;
+            let stops_grid = reels.iter().map(|dist| {
+                self.base.rand.rand_value_clone(dist)
+            }).collect::<Result<Vec<_>>>()?;
             (
                 stops_grid.iter().map(|p| p.0).collect(),
                 stops_grid.into_iter().map(|p| p.1).collect(),

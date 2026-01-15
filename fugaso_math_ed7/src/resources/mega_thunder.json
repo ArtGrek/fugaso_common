@@ -10,7 +10,8 @@
             "4": 4,
             "5": 5,
             "6": 6,
-            "7": 7
+            "7": 7,
+            "8": 10
         },
         {
             "1": 1,
@@ -19,7 +20,8 @@
             "4": 4,
             "5": 5,
             "6": 6,
-            "7": 7
+            "7": 7,
+            "8": 10
         },
         {
             "1": 1,
@@ -28,7 +30,8 @@
             "4": 4,
             "5": 5,
             "6": 6,
-            "7": 7
+            "7": 7,
+            "8": 10
         }
     ],
     "distJackpot": [10, 100],
@@ -67,7 +70,7 @@
             "3": 5
         }
     ],
-    "distLiftValue": [
+    "distLiftSymbol": [
         {
             "1": "J",
             "2": "K"
@@ -82,21 +85,17 @@
         }
     ],
     "distOver": {
-        "9986": 0,
-        "9992": 3,
-        "9994": 4,
-        "9996": 5,
-        "9997": 6,
-        "9998": 7,
-        "9999": 8,
-        "10000": 9
+        "9997": 0,
+        "9998": 6,
+        "9999": 7,
+        "10000": 8
     },
-    "mapJack": {
-        "M": 15,
-        "N": 30,
-        "O": 100,
-        "P": 1000
+    "distOverSymbol": {
+        "1": "J",
+        "2": "K",
+        "3": "L"
     },
+    "grandJackpot":  1000,
     "reels": [
         [
             "HHHFFIIIIAKKKIIHHHAFIIICHHHEIIIAHHIIHHHIICDHHIIAIIIDHHHIIAGFFIIHHIIIAEDHHHCEIIIHHHAIICFFFAHHHFFFIIIAHHEKKKFHHIIAHHHHHDFCHHHAFIIIHHHIIIAHHHEIIHHAFFHHGGGCIIIAKKKHHHAFHHHHHAGGEFIIIHHHAKKKHHHFFIIIIAKKKIIHHHAFIIICHHHEIIIAHHIIHHHIICDHHIIAIIIDHHHIIGFFIIHHIIIAEDHHHC",

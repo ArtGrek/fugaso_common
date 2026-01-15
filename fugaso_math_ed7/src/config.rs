@@ -23,8 +23,9 @@ pub struct MegaThunderConfig {
     pub dist_jackpot_value: Vec<BTreeMap<i32, i32>>,
     pub dist_lift: (i32, i32),
     pub dist_lift_mult: Vec<BTreeMap<i32, i32>>,
-    pub dist_lift_value: Vec<BTreeMap<i32, char>>,
+    pub dist_lift_symbol: Vec<BTreeMap<i32, char>>,
     pub dist_over: BTreeMap<i32, usize>,
+    pub dist_over_symbol: BTreeMap<i32, char>,
     #[serde(default)]
     pub dist_base_category: BTreeMap<i32, usize>,
     #[serde(default)]
@@ -34,7 +35,7 @@ pub struct MegaThunderConfig {
     pub dist_crown_2x: (usize, usize),
     #[serde(default)]
     pub dist_coin_ultra: BTreeMap<i32, i32>,
-    pub map_jack: HashMap<char, i32>,
+    pub grand_jackpot: i32,
 }
 
 impl BaseConfig for MegaThunderConfig {
@@ -59,9 +60,7 @@ pub mod mega_thunder {
     pub const SYM_COIN: char = 'J';
     pub const SYM_JACKPOT: char = 'K';
     pub const SYM_MULTI: char = 'L';
-    pub const SYM_SPETIALS: [char; 3] = ['J', 'K', 'L']; //coin & jackpots
-    pub const SYM_GRAND_JACKPOT: char = 'P';
-    pub const SYM_NONE: char = 'Q';
+    pub const SYM_SPETIALS: [char; 3] = ['J', 'K', 'L'];
 
     lazy_static! {
         pub static ref CFG: Arc<MegaThunderConfig> = {

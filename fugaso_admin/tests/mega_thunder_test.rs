@@ -33,16 +33,23 @@ async fn create_server_cfg() -> TestConfig {
     let cfg = ServerConfig::new(ServerArg {
         pool: pool.clone(),
         ..Default::default()
-    })
-    .await
-    .expect("error create config");
+    }).await.expect("error create config");
 
     let game = cfg.game_service.get_game(GAME_NAME).await.expect("error load game!").expect("error find game!");
 
     let mut rand = MockMegaThunderRand::new();
-    rand.expect_rand_cols_group().return_const(Ok((vec![0; gconf::CFG.reels[0].len()], (0..gconf::CFG.reels[0].len()).map(|_| vec!['H'; gconf::ROWS]).collect())));
+    rand.expect_rand_spin_grid().return_const(Ok((vec![0; gconf::CFG.reels[0].len()], (0..gconf::CFG.reels[0].len()).map(|_| vec!['H'; gconf::ROWS]).collect())));
+    rand.expect_rand_grid_coins().return_const(Some((0..gconf::CFG.reels[0].len()).map(|_| vec!['H'; gconf::ROWS]).collect()));
+    rand.expect_rand_grid_jackpots().return_const(Some((0..gconf::CFG.reels[0].len()).map(|_| vec!['H'; gconf::ROWS]).collect()));
+    rand.expect_rand_grid_lifts().return_const(Some((0..gconf::CFG.reels[0].len()).map(|_| vec!['H'; gconf::ROWS]).collect()));
+    rand.expect_rand_spin_over().return_const(Ok(Some((0..gconf::CFG.reels[0].len()).map(|_| vec!['H'; gconf::ROWS]).collect())));
+    rand.expect_rand_respin_grid().return_const((vec![0; gconf::CFG.reels[0].len()], (0..gconf::CFG.reels[0].len()).map(|_| vec!['@'; gconf::ROWS]).collect()));
 
-    rand.expect_rand_mults().return_const(Ok((0..gconf::CFG.reels[0].len()).map(|_| vec![0; gconf::ROWS]).collect()));
+    rand.expect_rand_coins_values().return_const(Some((0..gconf::CFG.reels[0].len()).map(|_| vec![0; gconf::ROWS]).collect()));
+    rand.expect_rand_jackpots_values().return_const(Some((0..gconf::CFG.reels[0].len()).map(|_| vec![0; gconf::ROWS]).collect()));
+    rand.expect_rand_lifts_values().return_const(Some((0..gconf::CFG.reels[0].len()).map(|_| vec![0; gconf::ROWS]).collect()));
+    rand.expect_rand_lifts_mult().return_const(Some((0..gconf::CFG.reels[0].len()).map(|_| vec![0; gconf::ROWS]).collect()));
+
     rand.expect_rand_lifts_new().return_const(Ok(Vec::new()));
 
     let math = MegaThunderMath::configured(rand).expect("math load error!");
@@ -54,9 +61,7 @@ async fn create_server_cfg() -> TestConfig {
             ..Default::default()
         },
         Arc::new(dispatch_sync_ctx),
-    )
-    .await
-    .expect("error ctx create!")
+    ).await.expect("error ctx create!")
 }
 
 fn parse_list(p: &str) -> VecDeque<Value> {
@@ -174,16 +179,20 @@ async fn assert_series(
             let grid = spin_data.result.grid.clone();
 
             let mut rand = MockMegaThunderRand::new();
-            rand.expect_rand_cols_group().return_const(Ok((stops.clone(), grid.clone())));
-            rand.expect_rand_cols().return_const((stops.clone(), grid.clone()));
-
+            rand.expect_rand_spin_grid().return_const(Ok((stops.clone(), grid.clone())));
+            rand.expect_rand_grid_coins().return_const(Some(grid.clone()));
+            rand.expect_rand_grid_jackpots().return_const(Some(grid.clone()));
+            rand.expect_rand_grid_lifts().return_const(Some(grid.clone()));
+            rand.expect_rand_respin_grid().return_const((stops.clone(), grid.clone()));
             if let Some(s) = spin_data.result.special {
-                let mults = s.mults.clone();
-                let lifts_new = s.lifts_new.clone();
-                rand.expect_rand_mults().return_const(Ok(mults.clone()));
-                rand.expect_rand_lifts_new().return_const(Ok(lifts_new.clone()));
+                rand.expect_rand_spin_over().return_const(Ok(s.overlay));
 
-                rand.expect_rand_over().return_const(Ok(s.overlay));
+                rand.expect_rand_coins_values().return_const(Some(s.mults.clone()));
+                rand.expect_rand_jackpots_values().return_const(Some(s.mults.clone()));
+                rand.expect_rand_lifts_values().return_const(Some(s.mults.clone()));
+                rand.expect_rand_lifts_mult().return_const(Some(s.lifts));
+
+                rand.expect_rand_lifts_new().return_const(Ok(s.lifts_new));
             }
             ctx.set_random(rand);
         }

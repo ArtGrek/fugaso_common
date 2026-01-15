@@ -45,14 +45,17 @@ impl MegaThunderMath<MegaThunderRandom> {
 }
 
 impl<R: MegaThunderRand> MegaThunderMath<R> {
+
     pub fn configured(rand: R) -> Result<Self, ServerError> {
         Self::custom(rand, Arc::clone(&mega_thunder::CFG))
     }
 
     pub fn custom(mut rand: R, config: Arc<MegaThunderConfig>) -> Result<Self, ServerError> {
         let category = mega_thunder::BASE_CATEGORY;
-        let (stops, grid) = rand.rand_cols_group(category, None)?;
-        let mults = rand.rand_mults(&grid, 0)?;
+        let (stops, grid) = rand.rand_spin_grid(category, None)?;
+            let mut mults = vec![vec![0; 3]; 5];
+            if let Some(m) = rand.rand_coins_values(&grid, &mults, category) {mults = m};
+        //let mults = rand.rand_coins_values(&grid, 0)?;
         let special = if mults.len() > 0 {
             Some(MegaThunderInfo {
                 mults,
@@ -109,6 +112,11 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
         round_mul: i32,
         grid: &Vec<Vec<char>>,
     ) -> Result<(Vec<Gain>, Vec<i32>, MegaThunderInfo), ServerError> {
+        let spetials = grid.iter().flat_map(|c| c.iter().filter(|v| mega_thunder::is_spetials(**v))).count();
+        let overlay = if spetials >= 2 && spetials <= 3 {self.rand.rand_spin_over(grid)?} else {None};
+        debug!("over: {overlay:?}");
+        let grid_on = overlay.as_ref().unwrap_or(grid);
+
         let lines = &self.config.lines;
         let combs = &self.config.wins;
         let gains = lines.iter().enumerate().filter_map(|(line_num, l)| {
@@ -142,16 +150,15 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
                 None
             }
         }).collect::<Vec<_>>();
-        let spetials = grid.iter().flat_map(|c| c.iter().filter(|v| mega_thunder::is_spetials(**v))).count();
-        let overlay = if spetials > 0 && spetials < grid.len() {self.rand.rand_over(grid)?} else {None};
-        debug!("over: {overlay:?}");
-        let grid_on = overlay.as_ref().unwrap_or(grid);
-        let spetials = grid_on.iter().flat_map(|c| c.iter().filter(|v| mega_thunder::is_spetials(**v))).count();
-        let mutipliers = grid_on.iter().flat_map(|c| c.iter().filter(|v| **v == mega_thunder::SYM_MULTI)).count();
-        debug!("spetials: {spetials} mutipliers: {mutipliers}");
         
-        let (mut respins, grand, accum, mults, lifts, lifts_new, mut total) = if spetials >= 6 {
-            let mut mults = self.rand.rand_mults(grid_on, counter_idx)?;
+        let coins = grid_on.iter().flat_map(|c| c.iter().filter(|v| {**v == mega_thunder::SYM_COIN || **v == mega_thunder::SYM_JACKPOT})).count();
+        let mutipliers = grid_on.iter().flat_map(|c| c.iter().filter(|v| {**v == mega_thunder::SYM_MULTI})).count();
+        debug!("coins: {coins} mutipliers: {mutipliers}");
+        
+        let (mut respins, grand, accum, mults, lifts, lifts_new, mut total) = if coins + mutipliers >= 6 {
+            let mut mults = vec![vec![0; 3]; 5];
+            if let Some(m) = self.rand.rand_coins_values(grid_on, &mults, counter_idx) {mults = m};
+            //let mut mults = self.rand.rand_coins_values(grid_on, counter_idx)?;
             debug!("mults: {mults:?}");
             let mut lifts = vec![vec![0; 3]; 5];
             mults.iter().enumerate().for_each(|(col_num, col)| {
@@ -190,11 +197,17 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
             let accum = total_coins_win as i64;
             (respins, grand, accum, mults, lifts, lifts_new, total)
         } else {
-            let have_coin = spetials > 0;
+            let have_coin = coins > 0;
             let have_mutiplier = mutipliers > 0;
-            let mut mults = self.rand.rand_mults(grid_on, counter_idx)?;
+
+            let mut mults = vec![vec![0; 3]; 5];
+            if let Some(m) = self.rand.rand_coins_values(grid_on, &mults, counter_idx) {mults = m};
+            if let Some(m) = self.rand.rand_jackpots_values(grid_on, &mults, counter_idx) {mults = m};
             debug!("mults: {mults:?}");
             let mut lifts = vec![vec![0; 3]; 5];
+            if let Some(l) = self.rand.rand_lifts_mult(grid_on, &lifts, counter_idx) {lifts = l};
+
+
             mults.iter().enumerate().for_each(|(col_num, col)| {
                 col.iter().enumerate().for_each(|(row_num, mult)| {
                     if *mult != 0 {
@@ -237,7 +250,6 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
         } else {
             None
         };
-
         let special = MegaThunderInfo {
             mults,
             lifts,
@@ -268,7 +280,9 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
         debug!("prev_spetials: {prev_spetials:?}");
         let spetials = grid.iter().flat_map(|c| c.iter().filter(|v| {mega_thunder::is_spetials(**v)})).count();
         debug!("spetials: {spetials:?}");
-        let mut mults = self.rand.rand_mults(&grid, counter_idx)?;
+        let mut mults = vec![vec![0; 3]; 5];
+        if let Some(m) = self.rand.rand_coins_values(&grid, &mults, counter_idx) {mults = m};
+        //let mut mults = self.rand.rand_coins_values(&grid, counter_idx)?;
         for c in 0..mults.len() {
             for r in 0..mults[c].len() {
                 if prev_info.mults[c][r] > 0 {
@@ -318,8 +332,7 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
             }).sum::<i32>();
 
             if prev_info.grand.iter().any(|v| {*v == 0}) && grand.iter().all(|v| {*v > 0}) {
-                let jp = self.config.map_jack.get(&mega_thunder::SYM_GRAND_JACKPOT).map(|m| {*m}).unwrap_or(0);
-                total_coins_win += jp * req.bet * req.denom;
+                total_coins_win += self.config.grand_jackpot * req.bet * req.denom;
             };
             (grand, total_coins_win)
         } else {
@@ -536,21 +549,14 @@ impl<R: MegaThunderRand> SlotMath for MegaThunderMath<R> {
     ) -> Result<GameData<Self::Special, Self::Restore>, ServerError> {
         let (category, stops, grid) = if request.bet_counter == self.config.bet_counters[0] {
             let category = mega_thunder::BASE_CATEGORY;
-            let (stops, grid) = self.rand.rand_cols_group(category, combo)?;
+            let (stops, mut grid) = self.rand.rand_spin_grid(category, combo)?;
+            if let Some(g) = self.rand.rand_grid_coins(&grid) {grid = g};
+            if let Some(g) = self.rand.rand_grid_jackpots(&grid) {grid = g};
+            if let Some(g) = self.rand.rand_grid_lifts(&grid) {grid = g};
             (category, stops, grid)
-        } else {
-            return Err(err_on!("illegal bet_counter!"));
-        };
-
-        let count_idx = self
-            .config
-            .bet_counters
-            .iter()
-            .position(|c| *c == request.bet_counter)
-            .ok_or_else(|| err_on!("illegal bet counter!"))?;
-
-        let (gains, holds, special) =
-            self.check_lines(request, count_idx, arg.round_multiplier, &grid)?;
+        } else {return Err(err_on!("illegal bet_counter!"));};
+        let count_idx = self.config.bet_counters.iter().position(|c| *c == request.bet_counter).ok_or_else(|| err_on!("illegal bet counter!"))?;
+        let (gains, holds, special) = self.check_lines(request, count_idx, arg.round_multiplier, &grid)?;
         let total = special.total;
         let (next_act, restore) = if special.respins > 0 {
             let grid_on = match special.overlay.as_ref() {
@@ -607,28 +613,16 @@ impl<R: MegaThunderRand> SlotMath for MegaThunderMath<R> {
         let prev = Arc::clone(&self.result);
         let (prev_total, mut prev_info, mut prev_grid, prev_restore) = match prev.as_ref() {
             GameData::Spin(v) => {
-                let prev_info = v
-                    .result
-                    .special
-                    .as_ref()
-                    .ok_or_else(|| err_on!("Illegal state!"))?.clone();
+                let prev_info = v.result.special.as_ref().ok_or_else(|| err_on!("Illegal state!"))?.clone();
                 let grid = if let Some(special) = &v.result.special {
-                    if let Some(over) = special.overlay.as_ref() {
-                        over.clone()
-                    } else {
-                        v.result.grid.clone()
-                    }
+                    if let Some(over) = special.overlay.as_ref() {over.clone()} else {v.result.grid.clone()}
                 } else {
                     v.result.grid.clone()
                 };
                 (v.result.total, prev_info, grid, &v.result.restore)
             }
             GameData::ReSpin(v) => {
-                let prev_info = v
-                    .result
-                    .special
-                    .as_ref()
-                    .ok_or_else(|| err_on!("Illegal state!"))?.clone();
+                let prev_info = v.result.special.as_ref().ok_or_else(|| err_on!("Illegal state!"))?.clone();
                 let grid = v.result.grid.clone();
                 (v.result.total, prev_info, grid, &v.result.restore)
             }
@@ -643,14 +637,10 @@ impl<R: MegaThunderRand> SlotMath for MegaThunderMath<R> {
                 };
             };
         };
-        let counter_idx = self
-            .config
-            .bet_counters
-            .iter()
-            .position(|c| *c == request.bet_counter)
-            .ok_or_else(|| err_on!("illegal bet_counter!"))?;
+
+        let counter_idx = self.config.bet_counters.iter().position(|c| *c == request.bet_counter).ok_or_else(|| err_on!("illegal bet_counter!"))?;
         let category = mega_thunder::BONUS_OFFSET + counter_idx;
-        let (stops, mut grid) = self.rand.rand_cols(category, combo);
+        let (stops, mut grid) = self.rand.rand_respin_grid(category, combo);
         self.apply_prev(&mut grid, &prev_grid);
         debug!("{grid:?}");
 
@@ -664,13 +654,11 @@ impl<R: MegaThunderRand> SlotMath for MegaThunderMath<R> {
             prev_total,
         )?;
         let total = special.total;
-
         let (next_act, restore, extra_data) = if special.respins > 0 {
             (ActionKind::RESPIN, prev_restore.clone(), None)
         } else {
             (ActionKind::CLOSE, None, prev_restore.clone())
         };
-
         let result = GameData::ReSpin(SpinData {
             id: id::GAME_DATA,
             balance: arg.balance,
