@@ -1,5 +1,5 @@
 use crate::config::{mega_thunder, MegaThunderConfig};
-use crate::protocol::MegaThunderInfo;
+use crate::protocol::{MegaThunderInfo, LiftItem, };
 use crate::rand::{MegaThunderRand, MegaThunderRandom};
 use essential_core::err_on;
 use essential_core::error::ServerError;
@@ -105,13 +105,7 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
             .collect::<Vec<_>>()
     }
 
-    pub fn check_lines(
-        &mut self,
-        req: &Request,
-        counter_idx: usize,
-        round_mul: i32,
-        grid: &Vec<Vec<char>>,
-    ) -> Result<(Vec<Gain>, Vec<i32>, MegaThunderInfo), ServerError> {
+    pub fn check_lines(&mut self, req: &Request, counter_idx: usize, round_mul: i32, grid: &Vec<Vec<char>>, ) -> Result<(Vec<Gain>, Vec<i32>, MegaThunderInfo), ServerError> {
         let spetials = grid.iter().flat_map(|c| c.iter().filter(|v| mega_thunder::is_spetials(**v))).count();
         let overlay = if spetials >= 2 && spetials <= 3 {self.rand.rand_spin_over(grid)?} else {None};
         debug!("over: {overlay:?}");
@@ -207,24 +201,31 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
             let mut lifts = vec![vec![0; 3]; 5];
             if let Some(l) = self.rand.rand_lifts_mult(grid_on, &lifts, counter_idx) {lifts = l};
 
-
-            mults.iter().enumerate().for_each(|(col_num, col)| {
-                col.iter().enumerate().for_each(|(row_num, mult)| {
-                    if *mult != 0 {
+            let mut lifts_new = vec![];
+            grid_on.iter().enumerate().for_each(|(col_num, col)| {
+                col.iter().enumerate().for_each(|(row_num, row)| {
+                    if *row == mega_thunder::SYM_COIN || *row == mega_thunder::SYM_JACKPOT {
                         lifts[col_num][row_num] = 1;
+                    } else if *row == mega_thunder::SYM_MULTI {
+                        let lift = lifts[col_num][row_num];
+                        for lc_num in 0..lifts.len() {
+                            for lr_num in 0..lifts[lc_num].len() {
+                                if lc_num != col_num && lr_num != row_num {
+                                    lifts[lc_num][lr_num] *= lift;
+                                }
+                            }
+                        }
+                        lifts_new.push(LiftItem {
+                            p: (col_num, row_num),
+                            m: lifts[col_num][row_num],
+                            v: mults[col_num][row_num],
+                        });
                     }
                 });
             });
-            let lifts_new = self.rand.rand_lifts_new(grid_on, counter_idx)?;
-            debug!("lifts_new: {lifts_new:?}");
-            lifts_new.iter().for_each(|lift| {
-                lifts.iter_mut().for_each(|lc| {
-                    lc.iter_mut().for_each(|l| {
-                        *l *= lift.m;
-                    });
-                });
-            });
             debug!("lifts: {lifts:?}");
+            debug!("lifts_new: {lifts_new:?}");
+
             let total_coins_win = if have_coin && have_mutiplier {
                 mults.iter().enumerate().map(|(col_num, col)| {
                     col.iter().enumerate().map(|(row_num, row)| {
@@ -232,10 +233,11 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
                     }).sum::<i32>()
                 }).sum::<i32>()
             } else {0};
+
+
             if mults.iter().all(|col| {col.iter().all(|row| {*row == 0})}) {mults = vec![]};
             if lifts.iter().all(|col| {col.iter().all(|row| {*row == 0})}) {lifts = vec![]};
             let total = gains.iter().map(|w| w.amount).sum::<i64>() + total_coins_win as i64;
-
             let grand = vec![];
             let respins = 0;
             let accum = 0;
@@ -247,9 +249,7 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
             respins = 0;
             total = max;
             Some(self.config.stop_factor)
-        } else {
-            None
-        };
+        } else {None};
         let special = MegaThunderInfo {
             mults,
             lifts,
