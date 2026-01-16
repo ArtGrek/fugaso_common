@@ -28,9 +28,6 @@ pub trait MegaThunderRand {
     fn rand_lifts_values(&mut self, grid: &Vec<Vec<char>>, mults: &Vec<Vec<i32>>, counter_idx: usize) -> Option<Vec<Vec<i32>>>;
     fn rand_lifts_mult(&mut self, grid: &Vec<Vec<char>>, lifts: &Vec<Vec<i32>>, counter_idx: usize) -> Option<Vec<Vec<i32>>>;
 
-
-    fn rand_lifts_new(&mut self, grid: &Vec<Vec<char>>, counter_idx: usize) -> Result<Vec<LiftItem>>; //?
-
 }
 
 pub struct MegaThunderRandom {
@@ -106,14 +103,21 @@ impl MegaThunderRand for MegaThunderRandom {
     fn rand_grid_lifts(&mut self, grid: &Vec<Vec<char>>) -> Option<Vec<Vec<char>>> {
         let dist_lift = &self.p.base.config.dist_lift;
         let mut result_grid = grid.clone();
-        result_grid.iter_mut().for_each(|col| {
-            col.iter_mut().for_each(|row| {
+        let mut placed = false;
+        for col in result_grid.iter_mut() {
+            if placed { break; }
+            for row in col.iter_mut() {
+                if placed { break; }
                 if !mega_thunder::is_spetials(*row) {
-                    if self.p.base.rand.random(0, dist_lift.1) < dist_lift.0 {*row = mega_thunder::SYM_MULTI;}
+                    if self.p.base.rand.random(0, dist_lift.1) < dist_lift.0 {
+                        *row = mega_thunder::SYM_MULTI;
+                        placed = true;
+                    }
                 }
-            });
-        });
-        if *grid != result_grid {Some(result_grid)} else {None}
+            }
+        }
+
+        if *grid != result_grid { Some(result_grid) } else { None }
     }
 
     fn rand_spin_over(&mut self, grid: &Vec<Vec<char>>) -> Result<Option<Vec<Vec<char>>>> {
@@ -144,13 +148,9 @@ impl MegaThunderRand for MegaThunderRandom {
         } else {Ok(None)}
     }
 
-    
-
     fn rand_respin_grid(&mut self, category: usize, combos: Option<Vec<usize>>,) -> (Vec<usize>, Vec<Vec<char>>) {
         self.p.rand_cols(category, combos)
     }
-
-
 
     fn rand_coins_values(&mut self, grid: &Vec<Vec<char>>, mults: &Vec<Vec<i32>>, counter_idx: usize) -> Option<Vec<Vec<i32>>> {
         let dist_coin_value = &self.p.base.config.dist_coin_value[counter_idx];
@@ -204,21 +204,4 @@ impl MegaThunderRand for MegaThunderRandom {
         if *lifts != result_lifts {Some(result_lifts)} else {None}
     }
 
-
-
-    fn rand_lifts_new(&mut self, grid: &Vec<Vec<char>>, counter_idx: usize) -> Result<Vec<LiftItem>> {
-        let dist_coin_value = &self.p.base.config.dist_coin_value[counter_idx];
-        let dist_lift_mult = &self.p.base.config.dist_lift_mult[counter_idx];
-        grid.iter().enumerate().flat_map(|(col_idx, col)| {
-            col.iter().enumerate().filter_map(move |(row_idx, symbol)| {
-                if *symbol == mega_thunder::SYM_SPETIALS[2] {Some((col_idx, row_idx))} else {None}
-            })
-        }).map(|(col, row)| {
-            Ok(LiftItem {
-                p: (col, row),
-                m: self.p.base.rand.rand_value(&dist_lift_mult)?,
-                v: self.p.base.rand.rand_value(&dist_coin_value)?,
-            })
-        }).collect::<Result<Vec<_>>>()
-    }
 }

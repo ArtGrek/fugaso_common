@@ -198,35 +198,39 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
             if let Some(m) = self.rand.rand_coins_values(grid_on, &mults, counter_idx) {mults = m};
             if let Some(m) = self.rand.rand_jackpots_values(grid_on, &mults, counter_idx) {mults = m};
             debug!("mults: {mults:?}");
+
             let mut lifts = vec![vec![0; 3]; 5];
             if let Some(l) = self.rand.rand_lifts_mult(grid_on, &lifts, counter_idx) {lifts = l};
-
-            let mut lifts_new = vec![];
             grid_on.iter().enumerate().for_each(|(col_num, col)| {
                 col.iter().enumerate().for_each(|(row_num, row)| {
                     if *row == mega_thunder::SYM_COIN || *row == mega_thunder::SYM_JACKPOT {
                         lifts[col_num][row_num] = 1;
-                    } else if *row == mega_thunder::SYM_MULTI {
-                        let lift = lifts[col_num][row_num];
-                        for lc_num in 0..lifts.len() {
-                            for lr_num in 0..lifts[lc_num].len() {
-                                if lc_num != col_num && lr_num != row_num {
-                                    lifts[lc_num][lr_num] *= lift;
-                                }
-                            }
-                        }
+                    }
+                });
+            });
+            let mut lifts_new = vec![];
+            grid_on.iter().enumerate().for_each(|(col_num, col)| {
+                col.iter().enumerate().for_each(|(row_num, row)| {
+                    if *row == mega_thunder::SYM_MULTI {
+                        let lift_mult = lifts[col_num][row_num];
+                        lifts[col_num][row_num] = 0;
                         lifts_new.push(LiftItem {
                             p: (col_num, row_num),
-                            m: lifts[col_num][row_num],
-                            v: mults[col_num][row_num],
+                            m: lift_mult,
+                            v: 0,
+                        });
+                        lifts.iter_mut().for_each(|lc| {
+                            lc.iter_mut().for_each(|l| {
+                               if *l > 0 { *l *= lift_mult};
+                            });
                         });
                     }
                 });
             });
             debug!("lifts: {lifts:?}");
             debug!("lifts_new: {lifts_new:?}");
-
-            let total_coins_win = if have_coin && have_mutiplier {
+            
+            let coins_win = if have_coin && have_mutiplier {
                 mults.iter().enumerate().map(|(col_num, col)| {
                     col.iter().enumerate().map(|(row_num, row)| {
                         row * lifts[col_num][row_num] * req.bet * req.denom
@@ -234,10 +238,9 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
                 }).sum::<i32>()
             } else {0};
 
-
             if mults.iter().all(|col| {col.iter().all(|row| {*row == 0})}) {mults = vec![]};
             if lifts.iter().all(|col| {col.iter().all(|row| {*row == 0})}) {lifts = vec![]};
-            let total = gains.iter().map(|w| w.amount).sum::<i64>() + total_coins_win as i64;
+            let total = gains.iter().map(|w| w.amount).sum::<i64>() + coins_win as i64;
             let grand = vec![];
             let respins = 0;
             let accum = 0;
@@ -305,9 +308,10 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
                 }
             });
         });
-        let lifts_new = self.rand.rand_lifts_new(grid, counter_idx)?;
+        let lifts_new = vec![];
+        //let lifts_new = self.rand.rand_lifts_new(grid, counter_idx)?;
         debug!("lifts_new: {lifts_new:?}");
-        lifts_new.iter().for_each(|lift| {
+        lifts_new.iter().for_each(|lift: &LiftItem| {
             lifts.iter_mut().for_each(|lc| {
                 lc.iter_mut().for_each(|l| {
                     *l *= lift.m;
