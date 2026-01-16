@@ -532,6 +532,21 @@ impl<R: MegaThunderRand> SlotMath for MegaThunderMath<R> {
             if let Some(g) = self.rand.rand_grid_jackpots(&grid) {grid = g};
             if let Some(g) = self.rand.rand_grid_lifts(&grid) {grid = g};
             (category, stops, grid)
+        } else if request.bet_counter == self.config.bet_counters[1] {
+            let category = mega_thunder::BASE_CATEGORY + 1;
+            let (stops, mut grid) = self.rand.rand_buy_spin_grid(category)?;
+            if let Some(g) = self.rand.rand_grid_coins(&grid) {grid = g};
+            if let Some(g) = self.rand.rand_grid_jackpots(&grid) {grid = g};
+            if let Some(g) = self.rand.rand_grid_lifts(&grid) {grid = g};
+            (category, stops, grid)
+        } else if request.bet_counter == self.config.bet_counters[2] {
+            let category = mega_thunder::BASE_CATEGORY + 2;
+            let (stops, mut grid) = self.rand.rand_buy_spin_grid(category)?;
+            if let Some(g) = self.rand.rand_grid_coins(&grid) {grid = g};
+            if let Some(g) = self.rand.rand_grid_jackpots(&grid) {grid = g};
+            if let Some(g) = self.rand.rand_grid_lifts(&grid) {grid = g};
+            if let Some(g) = self.rand.rand_grid_lifts(&grid) {grid = g};
+            (category, stops, grid)
         } else {return Err(err_on!("illegal bet_counter!"));};
         let count_idx = self.config.bet_counters.iter().position(|c| *c == request.bet_counter).ok_or_else(|| err_on!("illegal bet counter!"))?;
         let (gains, holds, special) = self.check_lines(request, count_idx, arg.round_multiplier, &grid)?;
