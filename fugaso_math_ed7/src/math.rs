@@ -163,7 +163,6 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
                 });
             });
             let lifts_new = vec![];
-            //let lifts_new = self.rand.rand_lifts_new(grid_on, counter_idx)?;
             debug!("lifts_new: {lifts_new:?}");
             lifts_new.iter().for_each(|lift: &LiftItem| {
                 lifts.iter_mut().for_each(|lc| {
