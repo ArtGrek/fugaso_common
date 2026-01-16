@@ -94,7 +94,7 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
                 col.iter()
                     .enumerate()
                     .map(|(r, v)| {
-                        if mega_thunder::is_spetials(*v) {
+                        if mega_thunder::is_specials(*v) {
                             sum + mults[c][r]
                         } else {
                             0
@@ -106,8 +106,8 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
     }
 
     pub fn check_lines(&mut self, req: &Request, counter_idx: usize, round_mul: i32, grid: &Vec<Vec<char>>, ) -> Result<(Vec<Gain>, Vec<i32>, MegaThunderInfo), ServerError> {
-        let spetials = grid.iter().flat_map(|c| c.iter().filter(|v| mega_thunder::is_spetials(**v))).count();
-        let overlay = if spetials >= 2 && spetials <= 3 {self.rand.rand_spin_over(grid)?} else {None};
+        let specials = grid.iter().flat_map(|c| c.iter().filter(|v| mega_thunder::is_specials(**v))).count();
+        let overlay = if specials >= 2 && specials <= 3 {self.rand.rand_spin_over(grid)?} else {None};
         debug!("over: {overlay:?}");
         let grid_on = overlay.as_ref().unwrap_or(grid);
 
@@ -262,10 +262,10 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
     }
 
     pub fn check_bonus(&mut self, req: &Request, counter_idx: usize, _multiplier: i32, grid: &mut Vec<Vec<char>>, prev_grid: &Vec<Vec<char>>, prev_info: &MegaThunderInfo, prev_total: i64, ) -> Result<(Vec<Gain>, MegaThunderInfo, Vec<i32>), ServerError> {
-        let prev_spetials = prev_grid.iter().flat_map(|c| c.iter().filter(|v| {mega_thunder::is_spetials(**v)})).count();
-        debug!("prev_spetials: {prev_spetials:?}");
-        let spetials = grid.iter().flat_map(|c| c.iter().filter(|v| {mega_thunder::is_spetials(**v)})).count();
-        debug!("spetials: {spetials:?}");
+        let prev_specials = prev_grid.iter().flat_map(|c| c.iter().filter(|v| {mega_thunder::is_specials(**v)})).count();
+        debug!("prev_specials: {prev_specials:?}");
+        let specials = grid.iter().flat_map(|c| c.iter().filter(|v| {mega_thunder::is_specials(**v)})).count();
+        debug!("specials: {specials:?}");
 
         let mut mults = vec![vec![0; 3]; 5];
         if let Some(m) = self.rand.rand_coins_values(&grid, &mults, counter_idx) {mults = m};
@@ -308,7 +308,7 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
         });
         debug!("lifts: {lifts:?}");
 
-        let mut respins = if spetials > prev_spetials {mega_thunder::BONUS_COUNT} else {prev_info.respins - 1};
+        let mut respins = if specials > prev_specials {mega_thunder::BONUS_COUNT} else {prev_info.respins - 1};
         let (grand, coins_win) = if respins > 0 {
             let mut grand = prev_info.grand.clone();
             let mut coins_win = mults.iter().enumerate().map(|(col_num, col)| {
@@ -335,7 +335,7 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
         debug!("grand: {grand:?}");
 
         let max = self.calc_max_win(req);
-        let stop = if prev_total + coins_win as i64 >= max {
+        let stop = if prev_total + coins_win as i64 /*+ remain_coins_win*/ >= max {
             respins = 0;
             Some(self.config.stop_factor)
         } else {None};
@@ -388,7 +388,7 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
     fn apply_prev(&self, current: &mut Vec<Vec<char>>, prev: &Vec<Vec<char>>) {
         for c in 0..prev.len() {
             for r in 0..prev[c].len() {
-                if mega_thunder::is_spetials(prev[c][r]) {
+                if mega_thunder::is_specials(prev[c][r]) {
                     current[c][r] = prev[c][r]
                 }
             }

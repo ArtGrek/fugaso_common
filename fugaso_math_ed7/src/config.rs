@@ -60,7 +60,6 @@ pub mod mega_thunder {
     pub const SYM_COIN: char = 'J';
     pub const SYM_JACKPOT: char = 'K';
     pub const SYM_MULTI: char = 'L';
-    pub const SYM_SPETIALS: [char; 3] = ['J', 'K', 'L'];
 
     lazy_static! {
         pub static ref CFG: Arc<MegaThunderConfig> = {
@@ -75,7 +74,7 @@ pub mod mega_thunder {
         };
     }
 
-    pub fn is_spetials(c: char) -> bool {
-        c >= SYM_SPETIALS[0] && c <= SYM_SPETIALS[SYM_SPETIALS.len() - 1]
+    pub fn is_specials(c: char) -> bool {
+        c >= SYM_COIN && c <= SYM_MULTI
     }
 }

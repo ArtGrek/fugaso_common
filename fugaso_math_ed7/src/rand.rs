@@ -54,7 +54,7 @@ impl MegaThunderRand for MegaThunderRandom {
         let reels = &self.p.reels_cfg[category];
         let stops_grid = reels.iter().enumerate().map(|(_c, dist)| {
             let mut m = dist.iter().enumerate().filter_map(|(i, (_k, v))| {
-                if v.iter().any(|s| mega_thunder::is_spetials(*s)) {Some(i)} else {None}
+                if v.iter().any(|s| mega_thunder::is_specials(*s)) {Some(i)} else {None}
             }).collect::<Vec<_>>();
             let idx = self.p.base.rand.rand_vec_remove(&mut m)?;
             dist.iter().enumerate().find_map(|(i, (_k, v))| {
@@ -78,7 +78,7 @@ impl MegaThunderRand for MegaThunderRandom {
         let mut result_grid = grid.clone();
         result_grid.iter_mut().for_each(|col| {
             col.iter_mut().for_each(|row| {
-                if !mega_thunder::is_spetials(*row) {
+                if !mega_thunder::is_specials(*row) {
                     if self.p.base.rand.random(0, dist_coin.1) < dist_coin.0 {*row = mega_thunder::SYM_COIN;}
                 }
             });
@@ -91,7 +91,7 @@ impl MegaThunderRand for MegaThunderRandom {
         let mut result_grid = grid.clone();
         result_grid.iter_mut().for_each(|col| {
             col.iter_mut().for_each(|row| {
-                if !mega_thunder::is_spetials(*row) {
+                if !mega_thunder::is_specials(*row) {
                     if self.p.base.rand.random(0, dist_jackpot.1) < dist_jackpot.0 {*row = mega_thunder::SYM_JACKPOT;}
                 }
             });
@@ -107,7 +107,7 @@ impl MegaThunderRand for MegaThunderRandom {
             if placed { break; }
             for row in col.iter_mut() {
                 if placed { break; }
-                if !mega_thunder::is_spetials(*row) {
+                if !mega_thunder::is_specials(*row) {
                     if self.p.base.rand.random(0, dist_lift.1) < dist_lift.0 {
                         *row = mega_thunder::SYM_MULTI;
                         placed = true;
@@ -126,12 +126,12 @@ impl MegaThunderRand for MegaThunderRandom {
             let mut overlay = grid.clone();
             let mut empty_pos = overlay.iter().enumerate().flat_map(|(col_num, col)| {
                 col.iter().enumerate().filter_map(move |(row_num, row)| {
-                    if !mega_thunder::is_spetials(*row) {Some((col_num, row_num))} else {None}
+                    if !mega_thunder::is_specials(*row) {Some((col_num, row_num))} else {None}
                 })
             }).collect::<Vec<_>>();
             let filled_count = overlay.iter().flat_map(|col| {
                 col.iter().filter(|row| {
-                    mega_thunder::is_spetials(**row)
+                    mega_thunder::is_specials(**row)
                 })
             }).count();
             debug!("filled: {filled_count} - {overlay:?}");
