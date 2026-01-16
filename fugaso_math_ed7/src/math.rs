@@ -150,6 +150,8 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
         debug!("coins: {coins} mutipliers: {mutipliers}");
         
         let (mut respins, grand, accum, mults, lifts, lifts_new, mut total) = if coins + mutipliers >= 6 {
+
+
             let mut mults = vec![vec![0; 3]; 5];
             if let Some(m) = self.rand.rand_coins_values(grid_on, &mults, counter_idx) {mults = m};
             //let mut mults = self.rand.rand_coins_values(grid_on, counter_idx)?;
@@ -175,8 +177,10 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
             });
             debug!("lifts: {lifts:?}");
 
+            
+
             let mut grand = vec![0; grid.len()];
-            let total_coins_win = mults.iter().enumerate().map(|(col_num, col)| {
+            let coins_win = mults.iter().enumerate().map(|(col_num, col)| {
                 if col.iter().all(|v| *v > 0) {
                     grand[col_num] += 1;
                     col.iter().enumerate().map(|(row_num, row)| {
@@ -186,9 +190,9 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
             }).sum::<i32>();
             debug!("grand: {grand:?}");
 
-            let total = gains.iter().map(|w| w.amount).sum::<i64>() + total_coins_win as i64;
+            let total = gains.iter().map(|w| w.amount).sum::<i64>() + coins_win as i64;
             let respins = mega_thunder::BONUS_COUNT;
-            let accum = total_coins_win as i64;
+            let accum = coins_win as i64;
             (respins, grand, accum, mults, lifts, lifts_new, total)
         } else {
             let have_coin = coins > 0;
@@ -213,15 +217,14 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
                 col.iter().enumerate().for_each(|(row_num, row)| {
                     if *row == mega_thunder::SYM_MULTI {
                         let lift_mult = lifts[col_num][row_num];
-                        lifts[col_num][row_num] = 0;
                         lifts_new.push(LiftItem {
                             p: (col_num, row_num),
                             m: lift_mult,
-                            v: 0,
+                            v: (mults.iter().flat_map(|row| row.iter()).sum::<i32>()),
                         });
-                        lifts.iter_mut().for_each(|lc| {
-                            lc.iter_mut().for_each(|l| {
-                               if *l > 0 { *l *= lift_mult};
+                        lifts.iter_mut().enumerate().for_each(|(lc_num, lc)| {
+                            lc.iter_mut().enumerate().for_each(|(lr_num, lr)| {
+                               if grid_on[lc_num][lr_num] == mega_thunder::SYM_COIN || grid_on[lc_num][lr_num] == mega_thunder::SYM_JACKPOT { *lr *= lift_mult};
                             });
                         });
                     }
@@ -238,8 +241,6 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
                 }).sum::<i32>()
             } else {0};
 
-            if mults.iter().all(|col| {col.iter().all(|row| {*row == 0})}) {mults = vec![]};
-            if lifts.iter().all(|col| {col.iter().all(|row| {*row == 0})}) {lifts = vec![]};
             let total = gains.iter().map(|w| w.amount).sum::<i64>() + coins_win as i64;
             let grand = vec![];
             let respins = 0;
