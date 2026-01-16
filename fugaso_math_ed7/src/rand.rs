@@ -9,7 +9,6 @@ use log::debug;
 use mockall::*;
 
 use crate::config::{mega_thunder, MegaThunderConfig};
-use crate::protocol::LiftItem;
 
 #[automock]
 pub trait MegaThunderRand {

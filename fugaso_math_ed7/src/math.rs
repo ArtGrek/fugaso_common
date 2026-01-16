@@ -162,9 +162,10 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
                     }
                 });
             });
-            let lifts_new = self.rand.rand_lifts_new(grid_on, counter_idx)?;
+            let lifts_new = vec![];
+            //let lifts_new = self.rand.rand_lifts_new(grid_on, counter_idx)?;
             debug!("lifts_new: {lifts_new:?}");
-            lifts_new.iter().for_each(|lift| {
+            lifts_new.iter().for_each(|lift: &LiftItem| {
                 lifts.iter_mut().for_each(|lc| {
                     lc.iter_mut().for_each(|l| {
                         *l *= lift.m;
