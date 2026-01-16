@@ -9,6 +9,7 @@ use log::debug;
 use mockall::*;
 
 use crate::config::{mega_thunder, MegaThunderConfig};
+use crate::protocol::LiftItem;
 
 #[automock]
 pub trait MegaThunderRand {
@@ -20,12 +21,11 @@ pub trait MegaThunderRand {
     fn rand_grid_lifts(&mut self, grid: &Vec<Vec<char>>) -> Option<Vec<Vec<char>>>;
     fn rand_spin_over(&mut self, grid: &Vec<Vec<char>>) -> Result<Option<Vec<Vec<char>>>>;
 
-    fn rand_respin_grid(&mut self,category: usize,combos: Option<Vec<usize>>,) -> (Vec<usize>, Vec<Vec<char>>); //?
+    fn rand_respin_grid(&mut self,category: usize,combos: Option<Vec<usize>>,) -> (Vec<usize>, Vec<Vec<char>>);
 
     fn rand_coins_values(&mut self, grid: &Vec<Vec<char>>, mults: &Vec<Vec<i32>>, counter_idx: usize) -> Option<Vec<Vec<i32>>>;
     fn rand_jackpots_values(&mut self, grid: &Vec<Vec<char>>, mults: &Vec<Vec<i32>>, counter_idx: usize) -> Option<Vec<Vec<i32>>>;
-    fn rand_lifts_values(&mut self, grid: &Vec<Vec<char>>, mults: &Vec<Vec<i32>>, counter_idx: usize) -> Option<Vec<Vec<i32>>>;
-    fn rand_lifts_mult(&mut self, grid: &Vec<Vec<char>>, lifts: &Vec<Vec<i32>>, counter_idx: usize) -> Option<Vec<Vec<i32>>>;
+    fn rand_lifts_values_mults(&mut self, grid: &Vec<Vec<char>>, counter_idx: usize) -> Result<Vec<LiftItem>>;
 
 }
 
@@ -173,34 +173,28 @@ impl MegaThunderRand for MegaThunderRandom {
         if *mults != result_mults {Some(result_mults)} else {None}
     }
 
-    fn rand_lifts_values(&mut self, grid: &Vec<Vec<char>>, mults: &Vec<Vec<i32>>, counter_idx: usize) -> Option<Vec<Vec<i32>>> {
+    fn rand_lifts_values_mults(&mut self, grid: &Vec<Vec<char>>, counter_idx: usize) -> Result<Vec<LiftItem>> {
         let dist_lift_symbol = &self.p.base.config.dist_lift_symbol[counter_idx];
         let dist_coin_value = &self.p.base.config.dist_coin_value[counter_idx];
         let dist_jackpot_value = &self.p.base.config.dist_jackpot_value[counter_idx];
-        let mut result_mults = mults.clone();
-        grid.iter().enumerate().for_each(|(col_num, col)| {
-            col.iter().enumerate().for_each(|(row_num, row)| {
-                if *row == mega_thunder::SYM_MULTI {
-                    match self.p.base.rand.rand_value(&dist_lift_symbol) {
-                        Ok(mega_thunder::SYM_COIN) => {if let Ok(coin_value) = self.p.base.rand.rand_value(&dist_coin_value) {result_mults[col_num][row_num] = coin_value}},
-                        Ok(mega_thunder::SYM_JACKPOT) => {if let Ok(jackpot_value) = self.p.base.rand.rand_value(&dist_jackpot_value) {result_mults[col_num][row_num] = jackpot_value}},
-                        _ => {}
-                    }
-                }
-            })
-        });
-        if *mults != result_mults {Some(result_mults)} else {None}
-    }
-
-    fn rand_lifts_mult(&mut self, grid: &Vec<Vec<char>>, lifts: &Vec<Vec<i32>>, counter_idx: usize) -> Option<Vec<Vec<i32>>> {
         let dist_lift_mult = &self.p.base.config.dist_lift_mult[counter_idx];
-        let mut result_lifts = lifts.clone();
-        grid.iter().enumerate().for_each(|(col_num, col)| {
-            col.iter().enumerate().for_each(|(row_num, row)| {
-                if *row == mega_thunder::SYM_MULTI {if let Ok(lift_mult) = self.p.base.rand.rand_value(&dist_lift_mult) {result_lifts[col_num][row_num] = lift_mult}}
+        grid.iter().enumerate().flat_map(|(col_num, col)| {
+            col.iter().enumerate().filter_map(move |(row_num, row)| {
+                if *row == mega_thunder::SYM_MULTI {Some((col_num, row_num))} else {None}
             })
-        });
-        if *lifts != result_lifts {Some(result_lifts)} else {None}
+        }).map(|(col, row)| {
+            let lift_mult =if let Ok(lift_mult) = self.p.base.rand.rand_value(&dist_lift_mult) {lift_mult} else {0};
+            let lift_value = match self.p.base.rand.rand_value(&dist_lift_symbol) {
+                Ok(mega_thunder::SYM_COIN) => {if let Ok(coin_value) = self.p.base.rand.rand_value(&dist_coin_value) {coin_value} else {0}},
+                Ok(mega_thunder::SYM_JACKPOT) => {if let Ok(jackpot_value) = self.p.base.rand.rand_value(&dist_jackpot_value) {jackpot_value} else {0}},
+                _ => {0}
+            };
+            Ok(LiftItem {
+                p: (col, row),
+                m: lift_mult,
+                v: lift_value,
+            })
+        }).collect::<Result<Vec<_>>>()
     }
 
 }

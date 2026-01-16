@@ -47,8 +47,10 @@ async fn create_server_cfg() -> TestConfig {
 
     rand.expect_rand_coins_values().return_const(Some((0..gconf::CFG.reels[0].len()).map(|_| vec![0; gconf::ROWS]).collect()));
     rand.expect_rand_jackpots_values().return_const(Some((0..gconf::CFG.reels[0].len()).map(|_| vec![0; gconf::ROWS]).collect()));
-    rand.expect_rand_lifts_values().return_const(Some((0..gconf::CFG.reels[0].len()).map(|_| vec![0; gconf::ROWS]).collect()));
-    rand.expect_rand_lifts_mult().return_const(Some((0..gconf::CFG.reels[0].len()).map(|_| vec![0; gconf::ROWS]).collect()));
+    /*rand.expect_rand_lifts_values().return_const(Some((0..gconf::CFG.reels[0].len()).map(|_| vec![0; gconf::ROWS]).collect()));
+    rand.expect_rand_lifts_mult().return_const(Some((0..gconf::CFG.reels[0].len()).map(|_| vec![0; gconf::ROWS]).collect()));*/
+    
+    rand.expect_rand_lifts_values_mults().return_const(Ok(Vec::new()));
 
     let math = MegaThunderMath::configured(rand).expect("math load error!");
     let dispatcher = cfg.create_slot_dispatcher(math, game).await.expect("error dispatcher load!");
@@ -187,8 +189,10 @@ async fn assert_series(
 
                 rand.expect_rand_coins_values().return_const(Some(s.mults.clone()));
                 rand.expect_rand_jackpots_values().return_const(Some(s.mults.clone()));
-                rand.expect_rand_lifts_values().return_const(Some(s.mults.clone()));
-                rand.expect_rand_lifts_mult().return_const(Some(s.lifts));
+                /*rand.expect_rand_lifts_values().return_const(Some(s.mults.clone()));
+                rand.expect_rand_lifts_mult().return_const(Some(s.lifts));*/
+
+                rand.expect_rand_lifts_values_mults().return_const(Ok(s.lifts_new));
             }
             ctx.set_random(rand);
         }
