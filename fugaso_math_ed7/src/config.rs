@@ -60,6 +60,8 @@ pub mod mega_thunder {
     pub const SYM_COIN: char = 'J';
     pub const SYM_JACKPOT: char = 'K';
     pub const SYM_MULTI: char = 'L';
+    pub const SYM_COIN_COLUMN: char = 'Y';
+    pub const SYM_GRAND_JACKPOT: char = 'Z';
 
     lazy_static! {
         pub static ref CFG: Arc<MegaThunderConfig> = {
