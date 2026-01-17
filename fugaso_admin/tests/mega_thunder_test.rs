@@ -72,34 +72,31 @@ fn parse_list(p: &str) -> VecDeque<Value> {
 }
 
 #[tokio::test]
-async fn test_spin_no_win() {
-    test_series("00-no_win.json").await;
-}
+async fn test_spin_no_win() {test_series("00-no_win.json").await;}
 
 #[tokio::test]
-async fn test_spin_win() {
-    test_series("01-win.json").await;
-}
+async fn test_spin_win() {test_series("01-win.json").await;}
 
 #[tokio::test]
-async fn test_spin_multi_2() {
-    test_series("11-s-multi_2.json").await;
-}
+async fn test_spin_multi_2() {test_series("11-s-multi_2.json").await;}
 
 #[tokio::test]
-async fn test_respin_multi_5() {
-    test_series("23-fs-multi_5.json").await;
-}
+async fn test_init_win_line() {test_series("20-fs-init_win_line.json").await;}
 
 #[tokio::test]
-async fn test_respin_grand() {
-    test_series("24-fs-grand.json").await;
-}
+async fn test_init_win_line_col() {test_series("21-fs-init_win_line_col.json").await;}
 
 #[tokio::test]
-async fn test_game() {
-    test_series("44fe51f0487c4118a5408a3c9c3af79b.json").await;
-}
+async fn test_respin_multi_5() {test_series("23-fs-multi_5.json").await;}
+
+#[tokio::test]
+async fn test_respin_grand() {test_series("24-fs-grand.json").await;}
+
+#[tokio::test]
+async fn test_game() {test_series("44fe51f0487c4118a5408a3c9c3af79b.json").await;}
+
+#[tokio::test]
+async fn test_big_game() {test_series("d881edc87b9a4faf8a8edd304943f635.json").await;}
 
 async fn test_series(name: &str) {
     let cfg = create_server_cfg().await;

@@ -82,29 +82,6 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
         Ok(m)
     }
 
-    fn _create_collects(
-        &self,
-        grid: &Vec<Vec<char>>,
-        sum: i32,
-        mults: &Vec<Vec<i32>>,
-    ) -> Vec<Vec<i32>> {
-        grid.iter()
-            .enumerate()
-            .map(|(c, col)| {
-                col.iter()
-                    .enumerate()
-                    .map(|(r, v)| {
-                        if mega_thunder::is_specials(*v) {
-                            sum + mults[c][r]
-                        } else {
-                            0
-                        }
-                    })
-                    .collect::<Vec<_>>()
-            })
-            .collect::<Vec<_>>()
-    }
-
     pub fn check_lines(&mut self, req: &Request, counter_idx: usize, round_mul: i32, grid: &Vec<Vec<char>>, ) -> Result<(Vec<Gain>, Vec<i32>, MegaThunderInfo), ServerError> {
         let specials = grid.iter().flat_map(|c| c.iter().filter(|v| mega_thunder::is_specials(**v))).count();
         let overlay = if specials >= 2 && specials <= 3 {self.rand.rand_spin_over(grid)?} else {None};
@@ -197,6 +174,7 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
                     coins_win
                 } else {0}
             }).sum::<i32>();
+
             let mut remain_coins_count = 0;
             let remain_coins_win = mults.iter().enumerate().map(|(col_num, col)| {
                 if !col.iter().all(|v| *v > 0) && col.iter().any(|v| *v > 0) {
@@ -275,6 +253,8 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
             let grand = vec![];
             let respins = 0;
             let accum = 0;
+            if mults.iter().flatten().all(|&v| v == 0) {mults.clear()};
+            if lifts.iter().flatten().all(|&v| v == 0) {lifts.clear()};
             (respins, grand, accum, mults, lifts, lifts_new, total, remain_coins_win, remain_gain)
         };
 
@@ -306,8 +286,6 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
         debug!("prev_specials: {prev_specials:?}");
         let specials = grid.iter().flat_map(|c| c.iter().filter(|v| {mega_thunder::is_specials(**v)})).count();
         debug!("specials: {specials:?}");
-
-        let mut gains = vec![];
 
         let mut mults = vec![vec![0; 3]; 5];
         if let Some(m) = self.rand.rand_coins_values(&grid, &mults, counter_idx) {mults = m};
@@ -351,9 +329,10 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
         debug!("lifts: {lifts:?}");
 
         let mut respins = if specials > prev_specials {mega_thunder::BONUS_COUNT} else {prev_info.respins - 1};
-        let (grand, coins_win) = if respins > 0 {
+        let (grand, mut gains, remain_coins_win, remain_gain) = if respins > 0 {
+            let mut gains = vec![];
             let mut grand = prev_info.grand.clone();
-            let mut coins_win = mults.iter().enumerate().map(|(col_num, col)| {
+            mults.iter().enumerate().for_each(|(col_num, col)| {
                 if col.iter().all(|v| *v > 0) {
                     grand[col_num] += 1;
                     let  coins_win = col.iter().enumerate().map(|(row_num, row)| {
@@ -367,13 +346,12 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
                         multi: 1, 
                         ..Default::default()
                     });
-                    coins_win
-                } else {0}
-            }).sum::<i32>();
+                }
+            });
             let mut remain_coins_count = 0;
             let remain_coins_win = mults.iter().enumerate().map(|(col_num, col)| {
                 if !col.iter().all(|v| *v > 0) && col.iter().any(|v| *v > 0) {
-                    col.iter().enumerate().map(|(row_num, row)| {
+                    col.iter().enumerate().map(|(row_num, &row)| {
                         remain_coins_count += 1;
                         row * lifts[col_num][row_num] * req.bet * req.denom
                     }).sum::<i32>()
@@ -391,7 +369,6 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
             } else {None};
             if prev_info.grand.iter().any(|v| {*v == 0}) && grand.iter().all(|v| {*v > 0}) {
                 let jp_amount = self.config.grand_jackpot * req.bet * req.denom;
-                coins_win += jp_amount;
                 gains.push(Gain { 
                     symbol: mega_thunder::SYM_GRAND_JACKPOT, 
                     count: 1, 
@@ -401,13 +378,14 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
                     ..Default::default()
                 });
             };
-            (grand, coins_win)
+            (grand, gains, remain_coins_win, remain_gain)
         } else {
+            let mut gains = vec![];
             let grand = prev_info.grand.clone();
             let mut remain_coins_count = 0;
             let coins_win = mults.iter().enumerate().map(|(col_num, col)| {
-                col.iter().enumerate().map(|(row_num, row)| {
-                    remain_coins_count += 1;
+                col.iter().enumerate().map(|(row_num, &row)| {
+                    if row > 0 {remain_coins_count += 1};
                     row * lifts[col_num][row_num] * req.bet * req.denom
                 }).sum::<i32>()
             }).sum::<i32>();
@@ -421,17 +399,21 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
                     ..Default::default()
                 });
             };
-            (grand, coins_win)
+            let remain_coins_win = 0;
+            let remain_gain = None;
+            (grand, gains, remain_coins_win, remain_gain)
         };
         debug!("grand: {grand:?}");
 
         let max = self.calc_max_win(req);
-        let stop = if prev_total + coins_win as i64 /*+ remain_coins_win*/ >= max {
+        let stop = if prev_total + remain_coins_win as i64 >= max {
+            if let Some(g) = remain_gain {gains.push(g);}
             respins = 0;
             Some(self.config.stop_factor)
         } else {None};
-        let total = std::cmp::min(max, prev_total + coins_win as i64);
-        let accum = std::cmp::min(max, prev_info.accum + coins_win as i64);
+        let sum = gains.iter().map(|g| g.amount).sum::<i64>();
+        let total = std::cmp::min(max, prev_total + sum);
+        let accum = std::cmp::min(max, prev_info.accum + sum);
         Ok((
             gains,
             MegaThunderInfo {
@@ -447,25 +429,6 @@ impl<R: MegaThunderRand> MegaThunderMath<R> {
             },
             vec![0],
         ))
-    }
-
-    fn _calc_gains(&self, req: &Request, round_mul: i32, mults1: &Vec<Vec<i32>>) -> Vec<Gain> {
-        mults1
-            .iter()
-            .flat_map(|c| c.iter())
-            .filter(|h| **h > 0)
-            .map(|h| {
-                let amount = *h as i64 * req.bet as i64 * req.denom as i64 * round_mul as i64;
-                Gain {
-                    symbol: mega_thunder::SYM_COIN,
-                    count: 1,
-                    amount,
-                    line_num: 0,
-                    multi: 1,
-                    ..Default::default()
-                }
-            })
-            .collect::<Vec<_>>()
     }
 
     fn calc_max_win(&self, req: &Request) -> i64 {

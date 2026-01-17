@@ -22,14 +22,18 @@ pub struct MegaThunderInfo {
     pub stop: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub overlay: Option<Vec<Vec<char>>>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default = "default_array", skip_serializing_if = "Vec::is_empty")]
     pub mults: Vec<Vec<i32>>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default = "default_array", skip_serializing_if = "Vec::is_empty")]
     pub lifts: Vec<Vec<i32>>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub lifts_new: Vec<LiftItem>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub grand: Vec<i32>,
+}
+
+fn default_array() -> Vec<Vec<i32>> {
+    vec![vec![0; 3]; 5]
 }
 
 impl DatabaseStore for MegaThunderInfo {
