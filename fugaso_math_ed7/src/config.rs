@@ -55,6 +55,7 @@ pub mod mega_thunder {
     pub const BASE_CATEGORY: usize = 0;
     pub const BONUS_OFFSET: usize = 1;
     pub const BONUS_COUNT: i32 = 3;
+    pub const COLS: usize = 5;
     pub const ROWS: usize = 3;
     pub const SYM_WILD: char = 'I';
     pub const SYM_COIN: char = 'J';

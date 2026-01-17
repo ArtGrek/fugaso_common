@@ -148,7 +148,18 @@ impl MegaThunderRand for MegaThunderRandom {
     }
 
     fn rand_respin_grid(&mut self, category: usize, combos: Option<Vec<usize>>,) -> (Vec<usize>, Vec<Vec<char>>) {
-        self.p.rand_cols(category, combos)
+        let reels = &self.p.base.config.reels[category];
+        let cols = mega_thunder::COLS;
+        let rows = mega_thunder::ROWS;
+        let grid = (0..cols).map(|c| {
+            (0..rows).map(|r| {
+                let idx = c * rows + r;
+                let reel = &reels[idx];
+                let r = self.p.base.rand.random(0, reel.len());
+                reel[r]
+            }).collect::<Vec<_>>()
+        }).collect::<Vec<_>>();
+        (combos.unwrap_or_default(), grid)
     }
 
     fn rand_coins_values(&mut self, grid: &Vec<Vec<char>>, mults: &Vec<Vec<i32>>, counter_idx: usize) -> Option<Vec<Vec<i32>>> {

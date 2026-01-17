@@ -67,23 +67,12 @@ impl<C: BaseConfig> GroupRandom<C> {
         let reels = &self.reels_cfg[category];
 
         let result = if let Some(s) = combos.filter(|s| s.len() == reels.len()) {
-            let grid =
-                reels
-                    .iter()
-                    .enumerate()
-                    .filter_map(|(c, r)| {
-                        r.iter().enumerate().find_map(|(i, e)| {
-                            if i == s[c] {
-                                Some(e.1.clone())
-                            } else {
-                                None
-                            }
-                        })
+            let grid = reels.iter().enumerate().filter_map(|(c, r)| {
+                    r.iter().enumerate().find_map(|(i, e)| {
+                        if i == s[c] {Some(e.1.clone())} else {None}
                     })
-                    .collect::<Vec<_>>();
-            if grid.len() != s.len() {
-                return Err(err_on!("wrong combo len!"));
-            }
+                }).collect::<Vec<_>>();
+            if grid.len() != s.len() {return Err(err_on!("wrong combo len!"));}
             (s, grid)
         } else {
             let stops_grid = reels.iter().map(|dist| {
@@ -98,35 +87,22 @@ impl<C: BaseConfig> GroupRandom<C> {
         Ok(result)
     }
 
-    pub fn rand_cols(
-        &mut self,
-        category: usize,
-        combos: Option<Vec<usize>>,
-    ) -> (Vec<usize>, Vec<Vec<char>>) {
+    pub fn rand_cols(&mut self, category: usize, combos: Option<Vec<usize>>, ) -> (Vec<usize>, Vec<Vec<char>>) {
         let reels = self.base.config.reels();
         let reel_link = &reels[category];
         let reels0 = &reels[0];
-
         let stops = if let Some(s) = combos.filter(|s| s.len() == reel_link.len()) {
             s
         } else {
-            reel_link
-                .iter()
-                .map(|reel| self.base.rand.random(0, reel.len()))
-                .collect::<Vec<_>>()
+            reel_link.iter().map(|reel| self.base.rand.random(0, reel.len())).collect::<Vec<_>>()
         };
-
-        let grid = (0..reels0.len())
-            .map(|c| {
-                (0..self.base.rows)
-                    .map(|r| {
-                        let index = c * self.base.rows + r;
-                        let s = stops[index];
-                        reel_link[index][s]
-                    })
-                    .collect::<Vec<_>>()
-            })
-            .collect::<Vec<_>>();
+        let grid = (0..reels0.len()).map(|c| {
+            (0..self.base.rows).map(|r| {
+                let index = c * self.base.rows + r;
+                let s = stops[index];
+                reel_link[index][s]
+            }).collect::<Vec<_>>()
+        }).collect::<Vec<_>>();
         (stops, grid)
     }
 
